@@ -12,6 +12,7 @@ import extrasRouter from './routes/extras';
 import avatarsRouter from './routes/avatars';
 import authRouter from './routes/auth';
 import profileRouter from './routes/profile';
+import affinityRouter from './routes/affinity';
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/groups', requireAuth, groupsRouter);
 app.use('/api/memories', requireAuth, memoriesRouter);
 app.use('/api/extras', requireAuth, extrasRouter);
 app.use('/api/avatars', requireAuth, avatarsRouter);
+app.use('/api', requireAuth, affinityRouter);
 
 // 错误处理(必须 4 参数才是 Express error 中间件)
 app.use((err: any, _req: any, res: any, _next: any) => {
