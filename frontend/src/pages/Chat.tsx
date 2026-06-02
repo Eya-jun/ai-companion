@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { charactersApi, chatApi, memoriesApi } from '../api/client';
-import type { Character, Message, LLMProvider } from '../api/types';
+import { charactersApi, chatApi, memoriesApi, affinityApi } from '../api/client';
+import type { Character, Message, LLMProvider, AffinityState } from '../api/types';
 import MessageBubble from '../components/MessageBubble';
+import AffinityMeter from '../components/AffinityMeter';
+import IntimateModeToggle from '../components/IntimateModeToggle';
+import UnlockCelebration from '../components/UnlockCelebration';
 import './Chat.css';
 
 export default function Chat() {
@@ -13,6 +16,8 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [model, setModel] = useState<LLMProvider>('kimi');
+  const [affinity, setAffinity] = useState<AffinityState | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [latestMemory, setLatestMemory] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,18 +33,30 @@ export default function Chat() {
   const loadAll = async () => {
     if (!characterId) return;
     try {
-      const [char, msgs, mem] = await Promise.all([
+      const [char, msgs, mem, aff] = await Promise.all([
         charactersApi.get(characterId),
         chatApi.getMessages(characterId),
         memoriesApi.latest(characterId).catch(() => ({ data: null })),
+        affinityApi.get(characterId).catch(() => ({ data: null })),
       ]);
       setCharacter(char.data);
       setMessages(msgs.data);
       setLatestMemory(mem.data);
+      if (aff.data) setAffinity(aff.data);
     } catch (e: any) {
       alert('加载失败：' + e.message);
     }
   };
+
+  // 首次达到 100% → 弹庆祝(localStorage 标记本设备只弹一次)
+  useEffect(() => {
+    if (!affinity?.unlockedAt || !characterId) return;
+    const seenKey = `seen_celebration_for_${characterId}`;
+    if (!localStorage.getItem(seenKey)) {
+      setShowCelebration(true);
+      localStorage.setItem(seenKey, 'true');
+    }
+  }, [affinity?.unlockedAt, characterId]);
 
   const send = async () => {
     if (!input.trim() || !characterId || loading) return;
@@ -114,9 +131,21 @@ export default function Chat() {
           <div>
             <div className="chat-header-name">{character.name}</div>
             <div className="chat-header-desc">{character.description}</div>
+            {affinity && (
+              <div style={{ marginTop: 4 }}>
+                <AffinityMeter affinity={affinity.affinity} stage={affinity.stage} variant="header" />
+              </div>
+            )}
           </div>
         </div>
         <div className="chat-header-actions">
+          {affinity?.unlockedAt && (
+            <IntimateModeToggle
+              characterId={characterId!}
+              mode={affinity.mode}
+              onChange={m => setAffinity(s => s ? { ...s, mode: m } : s)}
+            />
+          )}
           <select
             value={model}
             onChange={e => setModel(e.target.value as LLMProvider)}
