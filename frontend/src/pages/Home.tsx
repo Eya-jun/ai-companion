@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { charactersApi, groupsApi, extrasApi, API_BASE } from '../api/client';
-import type { Character, Group } from '../api/types';
+import { charactersApi, groupsApi, extrasApi, affinityApi, API_BASE } from '../api/client';
+import type { Character, Group, AffinityState } from '../api/types';
 import AppHeader from '../components/AppHeader';
+import AffinityMeter from '../components/AffinityMeter';
 import './Home.css';
 
 export default function Home() {
@@ -10,6 +11,7 @@ export default function Home() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [extrasCount, setExtrasCount] = useState<Record<string, number>>({});
+  const [affinities, setAffinities] = useState<Record<string, AffinityState>>({});
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'private' | 'group'>('private');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,6 +40,20 @@ export default function Home() {
         })
       );
       setExtrasCount(counts);
+
+      // 并行拉每个角色的 affinity state
+      const aff: Record<string, AffinityState> = {};
+      await Promise.all(
+        c.data.map(async (char: Character) => {
+          try {
+            const r = await affinityApi.get(char.id);
+            aff[char.id] = r.data;
+          } catch {
+            aff[char.id] = { affinity: 0, stage: 'stranger', mode: 'daily', unlockedAt: null, latestReason: null, latestDelta: null, difficulty: 'normal' };
+          }
+        })
+      );
+      setAffinities(aff);
     } catch (e: any) {
       alert('加载失败：' + e.message);
     } finally {
@@ -198,6 +214,9 @@ export default function Home() {
                     {c.is_preset && <span className="badge">预设</span>}
                   </div>
                   <div className="desc">{c.description}</div>
+                {affinities[c.id] && (
+                  <AffinityMeter affinity={affinities[c.id].affinity} stage={affinities[c.id].stage} variant="card" />
+                )}
                   {(extrasCount[c.id] ?? 0) > 0 && (
                     <div className="extras-badge" onClick={(e) => { e.stopPropagation(); navigate(`/character/${c.id}/extras`); }}>
                       📋 {extrasCount[c.id]} 条记录
