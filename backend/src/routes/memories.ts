@@ -5,9 +5,10 @@ import { LLMProvider } from '../config/llm-providers';
 
 const router = Router();
 
-// 获取角色的所有记忆
+// 获取角色的所有记忆(限定当前用户)
 router.get('/character/:characterId', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { characterId } = req.params;
     const { limit = 30, before } = req.query;
@@ -16,6 +17,7 @@ router.get('/character/:characterId', async (req, res) => {
       .from('memories')
       .select('*')
       .eq('character_id', characterId)
+      .eq('user_id', userId)
       .order('memory_date', { ascending: false })
       .limit(parseInt(limit as string, 10));
 
@@ -32,9 +34,10 @@ router.get('/character/:characterId', async (req, res) => {
   }
 });
 
-// 生成某天的记忆总结
+// 生成某天的记忆总结(限定当前用户)
 router.post('/summarize', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { characterId, date, model } = req.body;
 
@@ -44,18 +47,19 @@ router.post('/summarize', async (req, res) => {
 
     const targetDate = date || new Date().toISOString().split('T')[0];
 
-    // 1. 获取角色
+    // 1. 获取角色(校验可见性)
     const { data: character } = await supabase
       .from('characters')
       .select('*')
       .eq('id', characterId)
+      .or(`user_id.eq.${userId},is_preset.eq.true`)
       .single();
 
     if (!character) {
       return res.status(404).json({ success: false, error: '角色不存在' });
     }
 
-    // 2. 获取当天的所有聊天记录
+    // 2. 获取当天当前用户的所有聊天记录
     const startOfDay = `${targetDate}T00:00:00Z`;
     const endOfDay = `${targetDate}T23:59:59Z`;
 
@@ -63,6 +67,7 @@ router.post('/summarize', async (req, res) => {
       .from('messages')
       .select('*')
       .eq('character_id', characterId)
+      .eq('user_id', userId)
       .is('group_id', null)
       .gte('created_at', startOfDay)
       .lte('created_at', endOfDay)
@@ -97,14 +102,15 @@ ${conversationText}
       model: model as LLMProvider,
     });
 
-    // 4. 保存到数据库
+    // 4. 保存到数据库(user_id 加上)
     const { data, error } = await supabase
       .from('memories')
       .upsert({
         character_id: characterId,
+        user_id: userId,
         summary,
         memory_date: targetDate,
-      }, { onConflict: 'character_id,memory_date' })
+      }, { onConflict: 'character_id,user_id,memory_date' })
       .select()
       .single();
 
@@ -117,9 +123,10 @@ ${conversationText}
   }
 });
 
-// 获取最近一次记忆
+// 获取最近一次记忆(限定当前用户)
 router.get('/character/:characterId/latest', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { characterId } = req.params;
 
@@ -127,6 +134,7 @@ router.get('/character/:characterId/latest', async (req, res) => {
       .from('memories')
       .select('*')
       .eq('character_id', characterId)
+      .eq('user_id', userId)
       .order('memory_date', { ascending: false })
       .limit(1)
       .single();
