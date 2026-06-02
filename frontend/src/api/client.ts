@@ -97,6 +97,76 @@ export const chatApi = {
     request<{ success: boolean }>(`/chat/${characterId}/messages`, { method: 'DELETE' }),
 };
 
+// 流式 chat 事件类型
+export type StreamEvent =
+  | { meta: { character: { id: string; name: string; avatar: string }; userMessage: string } }
+  | { delta: string }
+  | { done: true }
+  | { error: string };
+
+/**
+ * 流式发送消息,逐 chunk 回调
+ * onEvent 收到每个 SSE 事件(meta / delta / done / error)
+ * 流式完成或出错时 resolve
+ */
+export async function sendStream(
+  characterId: string,
+  content: string,
+  model: LLMProvider | undefined,
+  onEvent: (e: StreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const session = getStoredSession();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+  if (INTERNAL_TOKEN) headers['X-Internal-Token'] = INTERNAL_TOKEN;
+
+  const res = await fetch(`${API_BASE}/chat/stream`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ characterId, content, model }),
+    signal,
+  });
+
+  if (res.status === 401) {
+    setStoredSession(null);
+    throw new Error('未授权');
+  }
+  if (!res.ok || !res.body) {
+    throw new Error(`请求失败: HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // SSE 事件以 \n\n 分隔
+    const parts = buffer.split('\n\n');
+    buffer = parts.pop() || ''; // 最后一个可能不完整,留到下个 chunk
+
+    for (const part of parts) {
+      const line = part.trim();
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6);
+      try {
+        const evt: StreamEvent = JSON.parse(data);
+        onEvent(evt);
+        if ('error' in evt) throw new Error((evt as any).error);
+      } catch (e: any) {
+        // 忽略单条解析错误,继续
+        if (e?.name === 'AbortError') throw e;
+      }
+    }
+  }
+}
+
 // ========== Groups ==========
 export const groupsApi = {
   list: () => request<{ success: boolean; data: Group[] }>('/groups'),
