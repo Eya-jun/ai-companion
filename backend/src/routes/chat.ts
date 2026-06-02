@@ -1,10 +1,19 @@
 import { Router } from 'express';
 import { getSupabaseAdmin } from '../config/supabase';
 import { generateChatResponse, ChatMessageItem } from '../services/llm';
+import { assemblePrivateChatSystemPrompt } from '../services/prompt-assembly';
 import { LLMProvider } from '../config/llm-providers';
 
 const router = Router();
 const MAX_CONTEXT_MESSAGES = 20;
+
+// 根据亲和度返回 stage 名
+function stageFromAffinity(affinity: number): string {
+  if (affinity >= 80) return 'intimate';
+  if (affinity >= 50) return 'flirtatious';
+  if (affinity >= 20) return 'familiar';
+  return 'stranger';
+}
 
 // 发送消息并获取回复(私聊,user_id 限定)
 router.post('/', async (req, res) => {
@@ -29,55 +38,44 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ success: false, error: '角色不存在' });
     }
 
-    // 2. 获取当前用户对该角色的补充资料(限定 user_id)
-    const { data: extras } = await supabase
-      .from('character_extras')
-      .select('*')
-      .eq('character_id', characterId)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true });
+    // 2. 并行拉:user profile、user_character_state、extras、recent reasons
+    const [userRes, stateRes, extrasRes, reasonsRes] = await Promise.all([
+      supabase.from('user_profiles').select('*').eq('user_id', userId).maybeSingle(),
+      supabase.from('user_character_state').select('*').eq('user_id', userId).eq('character_id', characterId).maybeSingle(),
+      supabase.from('character_extras').select('*').eq('character_id', characterId).eq('user_id', userId).order('created_at', { ascending: true }),
+      supabase.from('affinity_evaluations').select('eval_date, reason').eq('user_id', userId).eq('character_id', characterId)
+        .gte('eval_date', new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0])
+        .order('eval_date', { ascending: false }),
+    ]);
 
-    // 构造增强的 system_prompt
-    let enhancedPrompt = character.system_prompt;
-    if (extras && extras.length > 0) {
-      const extrasByType: Record<string, any[]> = {};
-      extras.forEach(e => {
-        if (!extrasByType[e.type]) extrasByType[e.type] = [];
-        extrasByType[e.type].push(e);
-      });
+    const affinity = stateRes.data?.affinity ?? 0;
+    const mode = stateRes.data?.mode ?? 'daily';
+    const stageName = stageFromAffinity(affinity);
 
-      const sections: string[] = [];
+    // 拉 stage_prompts(简单做法:用一个静态 fallback 表,避免每次都查 DB)
+    const STAGE_SNIPPETS: Record<string, { description: string; prompt_snippet: string }> = {
+      stranger: { description: '陌生', prompt_snippet: '你与用户刚认识,礼貌、拘谨、不会主动拉近距离。' },
+      familiar: { description: '熟悉', prompt_snippet: '你与用户已经很熟了,会主动开玩笑、分享日常、记得她说过的话。' },
+      flirtatious: { description: '暧昧', prompt_snippet: '你与用户之间有暧昧情愫。会吃醋、会有肢体接触暗示、会说一些似是而非的话。' },
+      intimate: { description: '亲密', prompt_snippet: '你与用户已经确认关系。会直接表达爱意、用昵称、主动亲密、有占有欲但也很宠。' },
+    };
+    const stage = { stage: stageName, ...STAGE_SNIPPETS[stageName] };
 
-      if (extrasByType.note && extrasByType.note.length > 0) {
-        sections.push(`【用户补充设定】
-${extrasByType.note.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
-      }
+    const user = userRes.data ?? { bio: null, preferred_name: null, occupation: null, age: null, mbti: null };
 
-      if (extrasByType.story && extrasByType.story.length > 0) {
-        sections.push(`【你们之间的故事背景】
-${extrasByType.story.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
-      }
+    const recentReasons = (reasonsRes.data || [])
+      .filter(r => r.reason)
+      .map(r => ({ date: r.eval_date, reason: r.reason! }));
 
-      if (extrasByType.relationship && extrasByType.relationship.length > 0) {
-        sections.push(`【关系进展记录】
-${extrasByType.relationship.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
-      }
-
-      if (extrasByType.memory_hint && extrasByType.memory_hint.length > 0) {
-        sections.push(`【重要记忆提示】
-${extrasByType.memory_hint.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
-      }
-
-      if (sections.length > 0) {
-        enhancedPrompt = `${character.system_prompt}
-
-═══════════════════════════════════════
-以下是用户为你添加的额外信息，**必须严格遵守**：
-═══════════════════════════════════════
-
-${sections.join('\n\n')}`;
-      }
-    }
+    const enhancedPrompt = assemblePrivateChatSystemPrompt({
+      character,
+      user,
+      stage,
+      mode,
+      affinity,
+      extras: (extrasRes.data || []) as any,
+      recentReasons,
+    });
 
     // 3. 获取最近的历史消息(私聊,限定 user_id)
     const { data: history } = await supabase
