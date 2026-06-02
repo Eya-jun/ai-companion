@@ -5,6 +5,7 @@ import {
   profileApi,
   getStoredSession,
   setStoredSession,
+  API_BASE,
   type UserProfile,
   type AuthSession,
 } from '../api/client';
@@ -49,8 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
-      const apiBase = (import.meta.env.VITE_API_BASE as string | undefined) || 'http://localhost:3000/api';
-      await fetch(`${apiBase}/auth/claim-legacy`, { method: 'POST', headers });
+      await fetch(`${API_BASE}/auth/claim-legacy`, { method: 'POST', headers });
       localStorage.setItem('has_claimed_legacy', 'true');
     } catch {
       // 失败也写标志,避免每次启动都重试

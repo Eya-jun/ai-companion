@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { charactersApi, groupsApi, extrasApi } from '../api/client';
+import { charactersApi, groupsApi, extrasApi, API_BASE } from '../api/client';
 import type { Character, Group } from '../api/types';
 import AppHeader from '../components/AppHeader';
 import './Home.css';
@@ -89,7 +89,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:3000/api'}/avatars/upload/${uploadingId}`, {
+      const res = await fetch(`${API_BASE}/avatars/upload/${uploadingId}`, {
         method: 'POST',
         body: formData,
         headers: import.meta.env.VITE_INTERNAL_TOKEN

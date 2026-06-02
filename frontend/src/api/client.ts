@@ -5,6 +5,8 @@ export type { LLMProvider, Character, Message, Group, UserProfile, AuthSession }
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000/api';
 const INTERNAL_TOKEN = import.meta.env.VITE_INTERNAL_TOKEN || '';
+
+export { API_BASE };
 const TOKEN_KEY = 'auth_session';
 
 // ===== Token 持久化 =====
