@@ -98,9 +98,9 @@ export default function Chat() {
         }
         // done / meta / error 都不需要额外动作(meta 已由我们 set 了空消息)
       });
-      // 流式完成后,从服务端 reload 一次,拿到真实 id(替代 temp id)
-      const msgs = await chatApi.getMessages(characterId);
-      setMessages(msgs.data);
+      // 不 reload:流式完成时保持乐观状态。
+      // 临时 id ('temp-ai-xxx')只在刷新页面时会被真实 id 替换(loadAll 会拉真实历史)。
+      // 之前 reload 会因为 created_at 跟乐观插入的时间戳错位,导致 AI 消息被排到用户消息上方。
     } catch (e: any) {
       // 流失败时,移除空 AI 消息并提示
       setMessages(prev => prev.filter(m => m.id !== aiMsgId));
