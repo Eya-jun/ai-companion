@@ -237,6 +237,15 @@ export default function Chat() {
           发送
         </button>
       </div>
+
+      {showCelebration && character && (
+        <UnlockCelebration
+          characterId={characterId!}
+          characterName={character.name}
+          characterAvatar={character.avatar}
+          onClose={() => setShowCelebration(false)}
+        />
+      )}
     </div>
   );
 }
