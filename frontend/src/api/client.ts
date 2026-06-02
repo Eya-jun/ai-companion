@@ -150,6 +150,16 @@ export const memoriesApi = {
       method: 'POST',
       body: JSON.stringify({ characterId, date, model }),
     }),
+  add: (characterId: string, date: string, summary: string) =>
+    request<{ success: boolean; data: any }>('/memories', {
+      method: 'POST', body: JSON.stringify({ characterId, date, summary }),
+    }),
+  update: (id: string, data: { summary: string }) =>
+    request<{ success: boolean; data: any }>(`/memories/${id}`, {
+      method: 'PUT', body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean }>(`/memories/${id}`, { method: 'DELETE' }),
 };
 
 // ========== Extras (角色补充资料) ==========
