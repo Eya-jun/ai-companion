@@ -8,6 +8,8 @@ interface MessageBubbleProps {
   isUser: boolean;
   senderType?: 'user' | 'character' | 'system';
   bubbleStyle?: 'default' | 'group';
+  // isUser=true 时显示这个头像(用户自己的);isUser=false 时显示 senderAvatar(角色头像)
+  userAvatar?: string;
 }
 
 function isImage(avatar?: string) {
@@ -21,7 +23,10 @@ export default function MessageBubble({
   isUser,
   senderType,
   bubbleStyle = 'default',
+  userAvatar,
 }: MessageBubbleProps) {
+  // isUser=true 显示用户头像,false 显示角色头像
+  const activeAvatar = isUser ? (userAvatar || senderAvatar) : senderAvatar;
   const segments = useMemo(() => parseResponse(content), [content]);
 
   if (senderType === 'system') {
@@ -41,7 +46,13 @@ export default function MessageBubble({
           <div className="message-bubble-wrapper">
             <div className="message-bubble user">{content}</div>
           </div>
-          <div className="message-avatar user-avatar">我</div>
+          <div className="message-avatar user-avatar">
+            {isImage(activeAvatar) ? (
+              <img src={activeAvatar} alt={senderName} />
+            ) : (
+              <span style={{ fontSize: '20px' }}>{senderName?.charAt(0) || '我'}</span>
+            )}
+          </div>
         </div>
       );
     }
@@ -55,7 +66,15 @@ export default function MessageBubble({
                 {line.action && <div className="bubble-action">{line.action}</div>}
               </div>
             </div>
-            {i === 0 && <div className="message-avatar user-avatar">我</div>}
+            {i === 0 && (
+              <div className="message-avatar user-avatar">
+                {isImage(activeAvatar) ? (
+                  <img src={activeAvatar} alt={senderName} />
+                ) : (
+                  <span style={{ fontSize: '20px' }}>{senderName?.charAt(0) || '我'}</span>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </>
@@ -79,10 +98,10 @@ export default function MessageBubble({
       {lines.length === 0 && content && (
         <div className="message-row character">
           <div className="message-avatar">
-            {isImage(senderAvatar) ? (
-              <img src={senderAvatar} alt={senderName} />
+            {isImage(activeAvatar) ? (
+              <img src={activeAvatar} alt={senderName} />
             ) : (
-              <span style={{ fontSize: '24px' }}>{senderAvatar || senderName?.charAt(0) || '?'}</span>
+              <span style={{ fontSize: '24px' }}>{activeAvatar || senderName?.charAt(0) || '?'}</span>
             )}
           </div>
           <div className="message-bubble-wrapper">
@@ -97,10 +116,10 @@ export default function MessageBubble({
         <div key={i} className="message-row character">
           {i === 0 && (
             <div className="message-avatar">
-              {isImage(senderAvatar) ? (
-                <img src={senderAvatar} alt={senderName} />
+              {isImage(activeAvatar) ? (
+                <img src={activeAvatar} alt={senderName} />
               ) : (
-                <span style={{ fontSize: '24px' }}>{senderAvatar || senderName?.charAt(0) || '?'}</span>
+                <span style={{ fontSize: '24px' }}>{activeAvatar || senderName?.charAt(0) || '?'}</span>
               )}
             </div>
           )}
