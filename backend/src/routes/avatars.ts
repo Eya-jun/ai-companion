@@ -29,17 +29,14 @@ router.post('/upload/:characterId', upload.single('file'), async (req, res) => {
       return res.status(400).json({ success: false, error: '文件超过 2MB' });
     }
 
-    // 校验角色所有权:预设不允许改,自定义必须是当前用户的
+    // 校验角色所有权(预设也允许改,改完所有用户都看到——预设本身是全用户共享的)
     const { data: character } = await supabase
       .from('characters')
       .select('user_id, is_preset')
       .eq('id', characterId)
       .single();
     if (!character) return res.status(404).json({ success: false, error: '角色不存在' });
-    if (character.is_preset) {
-      return res.status(403).json({ success: false, error: '预设角色不能改头像' });
-    }
-    if (character.user_id !== userId) {
+    if (!character.is_preset && character.user_id !== userId) {
       return res.status(403).json({ success: false, error: '无权修改此角色' });
     }
 
