@@ -36,3 +36,39 @@ export interface Group {
     characters: Character;
   }>;
 }
+
+// ===== Auth 相关 =====
+
+export interface UserProfile {
+  user_id: string;
+  email?: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  preferred_name: string | null;
+  gender: string | null;
+  age: number | null;
+  occupation: string | null;
+  mbti: string | null;
+  bio: string | null;
+  updated_at: string;
+}
+
+export interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+  user: { id: string; email: string; displayName?: string };
+}
+
+// ===== Affinity 相关(PR3 用,先定义) =====
+
+export type AffinityStage = 'stranger' | 'familiar' | 'flirtatious' | 'intimate';
+
+export interface AffinityState {
+  affinity: number;
+  stage: AffinityStage;
+  mode: 'daily' | 'intimate';
+  unlockedAt: string | null;
+  latestReason: string | null;
+  latestDelta: number | null;
+  difficulty: 'easy' | 'normal' | 'hard';
+}

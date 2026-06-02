@@ -1,13 +1,33 @@
 // API 客户端
-import type { LLMProvider, Character, Message, Group } from './types';
+import type { LLMProvider, Character, Message, Group, UserProfile, AuthSession } from './types';
 
-export type { LLMProvider, Character, Message, Group };
+export type { LLMProvider, Character, Message, Group, UserProfile, AuthSession };
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000/api';
 const INTERNAL_TOKEN = import.meta.env.VITE_INTERNAL_TOKEN || '';
+const TOKEN_KEY = 'auth_session';
+
+// ===== Token 持久化 =====
+
+export function getStoredSession(): AuthSession | null {
+  if (typeof localStorage === 'undefined') return null;
+  const raw = localStorage.getItem(TOKEN_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw) as AuthSession; } catch { return null; }
+}
+
+export function setStoredSession(session: AuthSession | null) {
+  if (typeof localStorage === 'undefined') return;
+  if (session) localStorage.setItem(TOKEN_KEY, JSON.stringify(session));
+  else localStorage.removeItem(TOKEN_KEY);
+}
 
 function authHeaders(): Record<string, string> {
-  return INTERNAL_TOKEN ? { 'X-Internal-Token': INTERNAL_TOKEN } : {};
+  const headers: Record<string, string> = {};
+  const session = getStoredSession();
+  if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+  if (INTERNAL_TOKEN) headers['X-Internal-Token'] = INTERNAL_TOKEN;
+  return headers;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -19,6 +39,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
     ...options,
   });
+
+  // 401 → 清 token,跳登录页
+  if (res.status === 401) {
+    setStoredSession(null);
+    if (typeof window !== 'undefined' && !window.location.hash.startsWith('#/login')) {
+      window.location.hash = '#/login';
+    }
+    throw new Error('未授权');
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: res.statusText }));
@@ -137,4 +166,45 @@ export const extrasApi = {
     }),
   delete: (id: string) =>
     request<{ success: boolean }>(`/extras/${id}`, { method: 'DELETE' }),
+};
+
+// ========== Auth ==========
+export const authApi = {
+  signup: (email: string, password: string, displayName: string) =>
+    request<{ success: boolean; data: AuthSession }>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, displayName }),
+    }),
+  login: (email: string, password: string) =>
+    request<{ success: boolean; data: AuthSession }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  me: () => request<{ success: boolean; data: UserProfile }>('/auth/me'),
+  logout: () => request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
+};
+
+// ========== Profile (用户卡) ==========
+export const profileApi = {
+  get: () => request<{ success: boolean; data: UserProfile }>('/profile'),
+  update: (data: Partial<UserProfile>) =>
+    request<{ success: boolean; data: UserProfile }>('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  uploadAvatar: async (file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const headers = authHeaders();
+    const res = await fetch(`${API_BASE}/profile/avatar`, {
+      method: 'POST',
+      body: fd,
+      headers, // 不设 Content-Type,让浏览器自动加 boundary
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || '上传失败');
+    }
+    return res.json() as Promise<{ success: boolean; data: { url: string; profile: UserProfile } }>;
+  },
 };
