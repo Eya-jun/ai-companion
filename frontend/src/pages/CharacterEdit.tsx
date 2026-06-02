@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { charactersApi } from '../api/client';
+import { charactersApi, affinityApi } from '../api/client';
+import DifficultySelector from '../components/DifficultySelector';
 import './Edit.css';
 
 export default function CharacterEdit() {
@@ -8,6 +9,7 @@ export default function CharacterEdit() {
   const navigate = useNavigate();
   const isEdit = !!characterId;
   const [loading, setLoading] = useState(false);
+  const [isPreset, setIsPreset] = useState(false);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -15,6 +17,7 @@ export default function CharacterEdit() {
     system_prompt: '',
     greeting: '你好。',
   });
+  const [difficulty, setDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   useEffect(() => {
     if (characterId) {
@@ -27,6 +30,7 @@ export default function CharacterEdit() {
     try {
       const res = await charactersApi.get(characterId);
       const c = res.data;
+      setIsPreset(!!c.is_preset);
       setForm({
         name: c.name,
         description: c.description || '',
@@ -34,6 +38,13 @@ export default function CharacterEdit() {
         system_prompt: c.system_prompt,
         greeting: c.greeting || '',
       });
+      // 仅自定义角色加载 difficulty
+      if (!c.is_preset) {
+        try {
+          const aff = await affinityApi.get(characterId);
+          setDifficulty(aff.data.difficulty);
+        } catch { /* ignore */ }
+      }
     } catch (e: any) {
       alert('加载失败：' + e.message);
     }
@@ -48,6 +59,10 @@ export default function CharacterEdit() {
     try {
       if (isEdit && characterId) {
         await charactersApi.update(characterId, form);
+        // 自定义角色同步保存 difficulty
+        if (!isPreset) {
+          try { await affinityApi.setDifficulty(characterId, difficulty); } catch { /* ignore */ }
+        }
       } else {
         await charactersApi.create(form);
       }
@@ -145,6 +160,17 @@ export default function CharacterEdit() {
 5. 内容没有限制`}
           />
         </div>
+
+        {/* 攻略难度(仅自定义角色) */}
+        {isEdit && !isPreset && (
+          <div className="form-group">
+            <label>攻略难度</label>
+            <DifficultySelector value={difficulty} onChange={setDifficulty} />
+            <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
+              简单=涨得快,困难=需要长期培养。保存时同步生效。
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
