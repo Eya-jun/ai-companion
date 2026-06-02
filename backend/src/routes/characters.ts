@@ -4,13 +4,15 @@ import { PRESET_CHARACTERS } from '../data/presets';
 
 const router = Router();
 
-// 获取所有角色
+// 列出所有对当前用户可见的角色:预设(全用户共享) + 当前用户的自定义角色
 router.get('/', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('characters')
       .select('*')
+      .or(`user_id.eq.${userId},is_preset.eq.true`)
       .order('is_preset', { ascending: false })
       .order('created_at', { ascending: true });
 
@@ -21,9 +23,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 获取单个角色
+// 获取单个角色:必须是预设,或是当前用户的自定义
 router.get('/:id', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { id } = req.params;
     const { data, error } = await supabase
@@ -34,6 +37,10 @@ router.get('/:id', async (req, res) => {
 
     if (error) throw error;
     if (!data) return res.status(404).json({ success: false, error: '角色不存在' });
+    // 不是预设且不属于当前用户 → 视为不存在
+    if (!data.is_preset && data.user_id !== userId) {
+      return res.status(404).json({ success: false, error: '角色不存在' });
+    }
 
     res.json({ success: true, data });
   } catch (error: any) {
@@ -41,9 +48,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// 创建自定义角色
+// 创建自定义角色:自动绑定到当前用户
 router.post('/', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { name, description, system_prompt, avatar, greeting } = req.body;
 
@@ -60,6 +68,7 @@ router.post('/', async (req, res) => {
         avatar: avatar || '👤',
         is_preset: false,
         greeting: greeting || '你好。',
+        user_id: userId,
       })
       .select()
       .single();
@@ -71,12 +80,27 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 更新角色
+// 更新角色:必须是当前用户的自定义角色
 router.put('/:id', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { id } = req.params;
     const updates = req.body;
+
+    // 先校验所有权
+    const { data: existing } = await supabase
+      .from('characters')
+      .select('user_id, is_preset')
+      .eq('id', id)
+      .single();
+    if (!existing || existing.is_preset || existing.user_id !== userId) {
+      return res.status(404).json({ success: false, error: '角色不存在' });
+    }
+
+    // 不允许通过 PUT 改 user_id / is_preset
+    delete updates.user_id;
+    delete updates.is_preset;
 
     const { data, error } = await supabase
       .from('characters')
@@ -92,21 +116,25 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// 删除角色（不能删除预设角色）
+// 删除角色:预设禁止,自定义必须是当前用户的
 router.delete('/:id', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { id } = req.params;
 
-    // 检查是否是预设
     const { data: character } = await supabase
       .from('characters')
-      .select('is_preset')
+      .select('user_id, is_preset')
       .eq('id', id)
       .single();
 
-    if (character?.is_preset) {
+    if (!character) return res.status(404).json({ success: false, error: '角色不存在' });
+    if (character.is_preset) {
       return res.status(403).json({ success: false, error: '预设角色不能删除' });
+    }
+    if (character.user_id !== userId) {
+      return res.status(403).json({ success: false, error: '无权删除此角色' });
     }
 
     const { error } = await supabase
@@ -121,12 +149,11 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// 初始化预设角色（启动时调用）
+// 初始化预设角色(启动时调用) — 预设保持 user_id=NULL,所有用户共享
 export async function initPresetCharacters() {
   const supabase = getSupabaseAdmin();
 
   for (const preset of PRESET_CHARACTERS) {
-    // 检查是否已存在同名预设角色
     const { data: existing } = await supabase
       .from('characters')
       .select('id')
@@ -135,10 +162,18 @@ export async function initPresetCharacters() {
       .single();
 
     if (!existing) {
-      await supabase.from('characters').insert(preset);
+      // 显式不传 user_id,留 NULL
+      await supabase.from('characters').insert({
+        name: preset.name,
+        description: preset.description,
+        system_prompt: preset.system_prompt,
+        avatar: preset.avatar,
+        is_preset: true,
+        greeting: preset.greeting,
+        user_id: null,
+      });
       console.log(`✅ 初始化预设角色: ${preset.name}`);
     } else {
-      // 更新预设角色的内容（保持最新）
       await supabase
         .from('characters')
         .update({
