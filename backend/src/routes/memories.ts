@@ -123,6 +123,92 @@ ${conversationText}
   }
 });
 
+// 手动新增一条记忆
+router.post('/', async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const supabase = getSupabaseAdmin();
+    const { characterId, date, summary } = req.body;
+    if (!characterId || !date || !summary) {
+      return res.status(400).json({ success: false, error: 'characterId, date, summary 必填' });
+    }
+    // 校验角色可见性
+    const { data: ch } = await supabase
+      .from('characters')
+      .select('user_id, is_preset')
+      .eq('id', characterId)
+      .or(`user_id.eq.${userId},is_preset.eq.true`)
+      .single();
+    if (!ch) return res.status(404).json({ success: false, error: '角色不存在' });
+
+    const { data, error } = await supabase
+      .from('memories')
+      .upsert({
+        user_id: userId, character_id: characterId,
+        memory_date: date, summary, source: 'user',
+      }, { onConflict: 'user_id,character_id,memory_date' })
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// 更新记忆(限定当前用户)
+router.put('/:id', async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const supabase = getSupabaseAdmin();
+    const { id } = req.params;
+    const { summary } = req.body;
+    if (!summary) {
+      return res.status(400).json({ success: false, error: 'summary 必填' });
+    }
+    const { data: existing } = await supabase
+      .from('memories')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+    if (!existing || existing.user_id !== userId) {
+      return res.status(404).json({ success: false, error: '记忆不存在' });
+    }
+    const { data, error } = await supabase
+      .from('memories')
+      .update({ summary })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// 删除记忆
+router.delete('/:id', async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const supabase = getSupabaseAdmin();
+    const { id } = req.params;
+    const { data: existing } = await supabase
+      .from('memories')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+    if (!existing || existing.user_id !== userId) {
+      return res.status(404).json({ success: false, error: '记忆不存在' });
+    }
+    const { error } = await supabase.from('memories').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // 获取最近一次记忆(限定当前用户)
 router.get('/character/:characterId/latest', async (req, res) => {
   try {
