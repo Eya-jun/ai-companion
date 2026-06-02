@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { charactersApi, groupsApi, extrasApi } from '../api/client';
 import type { Character, Group } from '../api/types';
+import AppHeader from '../components/AppHeader';
 import './Home.css';
 
 export default function Home() {
@@ -119,6 +120,7 @@ export default function Home() {
 
   return (
     <div className="home">
+      <AppHeader />
       <input
         type="file"
         ref={fileInputRef}
