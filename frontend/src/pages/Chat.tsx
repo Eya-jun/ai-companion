@@ -162,7 +162,7 @@ export default function Chat() {
           >
             📋
           </button>
-          <button className="header-btn" onClick={handleSummarize} title="生成今日记忆">
+          <button className="header-btn" onClick={() => navigate(`/character/${characterId}/memories`)} title="记忆管理">
             📝
           </button>
           <button className="header-btn" onClick={handleClear} title="清除聊天记录">
