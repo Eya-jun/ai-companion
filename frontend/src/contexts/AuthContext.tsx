@@ -31,12 +31,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session) {
       profileApi.get()
         .then(r => setProfile(r.data))
+        .then(() => claimLegacyIfNeeded())
         .catch(() => setStoredSession(null))
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, [session]);
+
+  const claimLegacyIfNeeded = async () => {
+    if (typeof localStorage === 'undefined') return;
+    if (localStorage.getItem('has_claimed_legacy')) return;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+      const apiBase = (import.meta.env.VITE_API_BASE as string | undefined) || 'http://localhost:3000/api';
+      await fetch(`${apiBase}/auth/claim-legacy`, { method: 'POST', headers });
+      localStorage.setItem('has_claimed_legacy', 'true');
+    } catch {
+      // 失败也写标志,避免每次启动都重试
+      localStorage.setItem('has_claimed_legacy', 'true');
+    }
+  };
 
   const login = async (email: string, password: string) => {
     const r = await authApi.login(email, password);
