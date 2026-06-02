@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { charactersApi, chatApi, memoriesApi, affinityApi, sendStream } from '../api/client';
 import type { Character, Message, LLMProvider, AffinityState } from '../api/types';
+import { useAuth } from '../contexts/AuthContext';
 import MessageBubble from '../components/MessageBubble';
 import AffinityMeter from '../components/AffinityMeter';
 import IntimateModeToggle from '../components/IntimateModeToggle';
@@ -9,6 +10,7 @@ import UnlockCelebration from '../components/UnlockCelebration';
 import './Chat.css';
 
 export default function Chat() {
+  const { profile } = useAuth();
   const { characterId } = useParams();
   const navigate = useNavigate();
   const [character, setCharacter] = useState<Character | null>(null);
