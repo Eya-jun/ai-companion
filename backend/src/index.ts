@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/env';
 import { internalTokenAuth, requireAuth } from './middleware/auth';
+import './types/express'; // 加载 Express.Request 的 user 类型扩展
 import { initPresetCharacters } from './routes/characters';
 import charactersRouter from './routes/characters';
 import chatRouter from './routes/chat';
