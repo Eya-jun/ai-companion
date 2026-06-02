@@ -1,7 +1,7 @@
 // API 客户端
-import type { LLMProvider, Character, Message, Group, UserProfile, AuthSession } from './types';
+import type { LLMProvider, Character, Message, Group, UserProfile, AuthSession, AffinityState } from './types';
 
-export type { LLMProvider, Character, Message, Group, UserProfile, AuthSession };
+export type { LLMProvider, Character, Message, Group, UserProfile, AuthSession, AffinityState };
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000/api';
 const INTERNAL_TOKEN = import.meta.env.VITE_INTERNAL_TOKEN || '';
@@ -209,4 +209,20 @@ export const profileApi = {
     }
     return res.json() as Promise<{ success: boolean; data: { url: string; profile: UserProfile } }>;
   },
+};
+
+// ========== Affinity (好感度) ==========
+export const affinityApi = {
+  get: (characterId: string) =>
+    request<{ success: boolean; data: AffinityState }>(`/characters/${characterId}/affinity`),
+  setMode: (characterId: string, mode: 'daily' | 'intimate') =>
+    request<{ success: boolean; data: { mode: string } }>(`/characters/${characterId}/mode`, {
+      method: 'PUT', body: JSON.stringify({ mode }),
+    }),
+  setDifficulty: (characterId: string, difficulty: 'easy' | 'normal' | 'hard') =>
+    request<{ success: boolean; data: { difficulty: string } }>(`/characters/${characterId}/difficulty`, {
+      method: 'PUT', body: JSON.stringify({ difficulty }),
+    }),
+  getSpecialGreeting: (characterId: string) =>
+    request<{ success: boolean; data: { greeting: string } }>(`/characters/${characterId}/special-greeting`),
 };
