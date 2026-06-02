@@ -208,7 +208,7 @@ export default function Chat() {
               content={m.content}
               senderName={m.sender_name || ''}
               senderAvatar={character.avatar}
-              userAvatar={profile?.avatar_url}
+              userAvatar={profile?.avatar_url ?? undefined}
               isUser={m.sender_type === 'user'}
               senderType={m.sender_type}
             />
