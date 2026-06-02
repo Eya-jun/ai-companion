@@ -305,4 +305,9 @@ export const affinityApi = {
     }),
   getSpecialGreeting: (characterId: string) =>
     request<{ success: boolean; data: { greeting: string } }>(`/characters/${characterId}/special-greeting`),
+  // 直接设置 affinity(供 dev 工具用,生产可保留)
+  set: (characterId: string, affinity: number) =>
+    request<{ success: boolean; data: { affinity: number; stage: string; unlockedAt: string | null } }>(`/characters/${characterId}/affinity`, {
+      method: 'PUT', body: JSON.stringify({ affinity }),
+    }),
 };
