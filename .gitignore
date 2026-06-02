@@ -1,0 +1,25 @@
+# Claude Code 项目级权限配置(每人自定,不入库)
+.claude/settings.json
+
+# Brainstorming / 计划阶段的 mockup 与中间产物
+.superpowers/
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+.cache/
