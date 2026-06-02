@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { charactersApi, groupsApi, extrasApi, affinityApi, API_BASE } from '../api/client';
+import { charactersApi, groupsApi, extrasApi, affinityApi, API_BASE, getStoredSession } from '../api/client';
 import type { Character, Group, AffinityState } from '../api/types';
 import AppHeader from '../components/AppHeader';
 import AffinityMeter from '../components/AffinityMeter';
@@ -85,7 +85,10 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      // 头像上传必须带 Authorization 头(后端 requireAuth),否则返回 401
       const headers: Record<string, string> = {};
+      const session = getStoredSession();
+      if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
       if (import.meta.env.VITE_INTERNAL_TOKEN) headers['X-Internal-Token'] = import.meta.env.VITE_INTERNAL_TOKEN;
       const res = await fetch(`${API_BASE}/avatars/upload/${uploadingId}`, { method: 'POST', body: formData, headers });
       if (!res.ok) { const error = await res.json(); throw new Error(error.error || '上传失败'); }
