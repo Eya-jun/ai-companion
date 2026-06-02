@@ -60,6 +60,34 @@ export async function chat(options: ChatOptions): Promise<string> {
   }
 }
 
+/**
+ * 流式 chat — 返回 AsyncIterable,每次迭代 yield 一个文本 chunk
+ * 失败时第一个 yield 就是空字符串(调用方根据这个判断要不要 abort)
+ */
+export async function* streamChat(options: ChatOptions): AsyncGenerator<string, void, void> {
+  const { model, messages, temperature, maxTokens = 800 } = options;
+  const client = clients[model];
+  const modelName = modelNames[model];
+
+  try {
+    const stream = await client.chat.completions.create({
+      model: modelName,
+      messages: messages as any,
+      temperature: temperature ?? 1,
+      max_tokens: maxTokens,
+      stream: true,
+    });
+
+    for await (const chunk of stream as any) {
+      const delta = chunk.choices?.[0]?.delta?.content || '';
+      if (delta) yield delta;
+    }
+  } catch (error: any) {
+    console.error(`LLM stream [${model}] error:`, error?.message || error);
+    throw new Error(`LLM 流式调用失败: ${error?.message || '未知错误'}`);
+  }
+}
+
 // 默认模型
 export function getDefaultProvider(): LLMProvider {
   const def = config.llm.default as LLMProvider;
