@@ -3,7 +3,16 @@ import { getSupabaseAdmin } from '../config/supabase';
 import multer from 'multer';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('仅支持图片文件'));
+    }
+    cb(null, true);
+  },
+});
 
 // 上传头像到 Supabase Storage
 router.post('/upload/:characterId', upload.single('file'), async (req, res) => {
