@@ -143,7 +143,13 @@ export default function Chat() {
       <header className="chat-header">
         <button className="back-btn" onClick={() => navigate('/')}>←</button>
         <div className="chat-header-info">
-          <div className="chat-header-avatar">{character.avatar}</div>
+          <div className="chat-header-avatar">
+            {character.avatar?.startsWith('data:image') || character.avatar?.startsWith('http') ? (
+              <img src={character.avatar} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            ) : (
+              <span style={{ fontSize: 24 }}>{character.avatar}</span>
+            )}
+          </div>
           <div>
             <div className="chat-header-name">{character.name}</div>
             <div className="chat-header-desc">{character.description}</div>
@@ -196,7 +202,13 @@ export default function Chat() {
       <div className="chat-messages">
         {messages.length === 0 ? (
           <div className="empty-chat">
-            <div className="empty-avatar">{character.avatar}</div>
+            <div className="empty-avatar">
+              {character.avatar?.startsWith('data:image') || character.avatar?.startsWith('http') ? (
+                <img src={character.avatar} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              ) : (
+                <span style={{ fontSize: 36 }}>{character.avatar}</span>
+              )}
+            </div>
             <div className="empty-name">{character.name}</div>
             <div className="empty-greeting">{character.greeting}</div>
             <div className="empty-hint">开始聊天吧～</div>
