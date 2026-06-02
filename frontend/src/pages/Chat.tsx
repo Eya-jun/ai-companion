@@ -95,7 +95,7 @@ export default function Chat() {
     }
   };
 
-  // Suppress unused warning - handleSummarize removed
+  // (handleSummarize 已删,记忆管理入口在 Memories 页)
 
   const handleClear = async () => {
     if (!characterId) return;
