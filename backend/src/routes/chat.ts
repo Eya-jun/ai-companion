@@ -6,9 +6,10 @@ import { LLMProvider } from '../config/llm-providers';
 const router = Router();
 const MAX_CONTEXT_MESSAGES = 20;
 
-// 发送消息并获取回复
+// 发送消息并获取回复(私聊,user_id 限定)
 router.post('/', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { characterId, content, model, saveToMemory = true } = req.body;
 
@@ -16,22 +17,24 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, error: 'characterId 和 content 必填' });
     }
 
-    // 1. 获取角色信息
+    // 1. 校验角色可见性:预设或当前用户的自定义
     const { data: character, error: charError } = await supabase
       .from('characters')
       .select('*')
       .eq('id', characterId)
+      .or(`user_id.eq.${userId},is_preset.eq.true`)
       .single();
 
     if (charError || !character) {
       return res.status(404).json({ success: false, error: '角色不存在' });
     }
 
-    // 2. 获取角色的补充资料（注入到 system_prompt）
+    // 2. 获取当前用户对该角色的补充资料(限定 user_id)
     const { data: extras } = await supabase
       .from('character_extras')
       .select('*')
       .eq('character_id', characterId)
+      .eq('user_id', userId)
       .order('created_at', { ascending: true });
 
     // 构造增强的 system_prompt
@@ -47,22 +50,22 @@ router.post('/', async (req, res) => {
 
       if (extrasByType.note && extrasByType.note.length > 0) {
         sections.push(`【用户补充设定】
-${extrasByType.note.map(e => `- ${e.title}：${e.content}`).join('\n')}`);
+${extrasByType.note.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
       }
 
       if (extrasByType.story && extrasByType.story.length > 0) {
         sections.push(`【你们之间的故事背景】
-${extrasByType.story.map(e => `- ${e.title}：${e.content}`).join('\n')}`);
+${extrasByType.story.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
       }
 
       if (extrasByType.relationship && extrasByType.relationship.length > 0) {
         sections.push(`【关系进展记录】
-${extrasByType.relationship.map(e => `- ${e.title}：${e.content}`).join('\n')}`);
+${extrasByType.relationship.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
       }
 
       if (extrasByType.memory_hint && extrasByType.memory_hint.length > 0) {
         sections.push(`【重要记忆提示】
-${extrasByType.memory_hint.map(e => `- ${e.title}：${e.content}`).join('\n')}`);
+${extrasByType.memory_hint.map((e: any) => `- ${e.title}：${e.content}`).join('\n')}`);
       }
 
       if (sections.length > 0) {
@@ -76,16 +79,17 @@ ${sections.join('\n\n')}`;
       }
     }
 
-    // 3. 获取最近的历史消息（私聊）
+    // 3. 获取最近的历史消息(私聊,限定 user_id)
     const { data: history } = await supabase
       .from('messages')
       .select('*')
       .eq('character_id', characterId)
+      .eq('user_id', userId)
       .is('group_id', null)
       .order('created_at', { ascending: false })
       .limit(MAX_CONTEXT_MESSAGES);
 
-    // 过滤掉空消息（防止 LLM API 报错）
+    // 过滤掉空消息(防止 LLM API 报错)
     const validHistory = (history || []).filter(m =>
       m.content && m.content.trim() !== ''
     );
@@ -106,11 +110,12 @@ ${sections.join('\n\n')}`;
       model: model as LLMProvider,
     });
 
-    // 6. 保存到数据库（避免空消息）
+    // 6. 保存到数据库(带 user_id)
     if (saveToMemory && aiResponse && aiResponse.trim() !== '') {
       await supabase.from('messages').insert([
         {
           character_id: characterId,
+          user_id: userId,
           role: 'user',
           content,
           sender_type: 'user',
@@ -118,6 +123,7 @@ ${sections.join('\n\n')}`;
         },
         {
           character_id: characterId,
+          user_id: userId,
           role: 'assistant',
           content: aiResponse,
           sender_type: 'character',
@@ -144,9 +150,10 @@ ${sections.join('\n\n')}`;
   }
 });
 
-// 获取历史消息
+// 获取历史消息(限定当前用户)
 router.get('/:characterId/messages', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { characterId } = req.params;
     const { limit = 50, before } = req.query;
@@ -155,6 +162,7 @@ router.get('/:characterId/messages', async (req, res) => {
       .from('messages')
       .select('*')
       .eq('character_id', characterId)
+      .eq('user_id', userId)
       .is('group_id', null)
       .order('created_at', { ascending: false })
       .limit(parseInt(limit as string, 10));
@@ -172,9 +180,10 @@ router.get('/:characterId/messages', async (req, res) => {
   }
 });
 
-// 清除聊天记录
+// 清除聊天记录(限定当前用户)
 router.delete('/:characterId/messages', async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { characterId } = req.params;
 
@@ -182,6 +191,7 @@ router.delete('/:characterId/messages', async (req, res) => {
       .from('messages')
       .delete()
       .eq('character_id', characterId)
+      .eq('user_id', userId)
       .is('group_id', null);
 
     if (error) throw error;
