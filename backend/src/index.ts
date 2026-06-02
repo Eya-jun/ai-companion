@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config/env';
-import { internalTokenAuth } from './middleware/auth';
+import { internalTokenAuth, requireAuth } from './middleware/auth';
 import { initPresetCharacters } from './routes/characters';
 import charactersRouter from './routes/characters';
 import chatRouter from './routes/chat';
@@ -43,12 +43,13 @@ app.get('/api/health', (_req, res) => {
 // 路由
 app.use('/api/auth', authRouter);
 app.use('/api/profile', profileRouter);
-app.use('/api/characters', charactersRouter);
-app.use('/api/chat', chatRouter);
-app.use('/api/groups', groupsRouter);
-app.use('/api/memories', memoriesRouter);
-app.use('/api/extras', extrasRouter);
-app.use('/api/avatars', avatarsRouter);
+// 业务路由:统一 requireAuth
+app.use('/api/characters', requireAuth, charactersRouter);
+app.use('/api/chat', requireAuth, chatRouter);
+app.use('/api/groups', requireAuth, groupsRouter);
+app.use('/api/memories', requireAuth, memoriesRouter);
+app.use('/api/extras', requireAuth, extrasRouter);
+app.use('/api/avatars', requireAuth, avatarsRouter);
 
 // 错误处理(必须 4 参数才是 Express error 中间件)
 app.use((err: any, _req: any, res: any, _next: any) => {
