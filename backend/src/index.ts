@@ -13,6 +13,7 @@ import avatarsRouter from './routes/avatars';
 import authRouter from './routes/auth';
 import profileRouter from './routes/profile';
 import affinityRouter from './routes/affinity';
+import { startDailyAffinityCron } from './jobs/dailyAffinityEval';
 
 const app = express();
 
@@ -70,6 +71,7 @@ async function start() {
 
     app.listen(config.port, () => {
       console.log(`\n🎉 服务器已启动: http://localhost:${config.port}`);
+      startDailyAffinityCron();
       console.log(`📝 API 文档:`);
       console.log(`   GET  /api/health`);
       console.log(`   GET  /api/characters`);
@@ -81,6 +83,10 @@ async function start() {
       console.log(`   POST /api/groups/:id/chat`);
       console.log(`   POST /api/groups/:id/trigger`);
       console.log(`   POST /api/memories/summarize`);
+      console.log(`   GET  /api/characters/:id/affinity`);
+      console.log(`   PUT  /api/characters/:id/mode`);
+      console.log(`   PUT  /api/characters/:id/difficulty`);
+      console.log(`   GET  /api/characters/:id/special-greeting`);
       console.log(`\n🤖 默认 LLM: ${config.llm.default}`);
     });
   } catch (error: any) {
