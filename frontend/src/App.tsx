@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import UserProfile from './pages/UserProfile';
 import UserProfileSetup from './pages/UserProfileSetup';
+import Memories from './pages/Memories';
 import './App.css';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/character/new" element={<CharacterEdit />} />
             <Route path="/character/:characterId/edit" element={<CharacterEdit />} />
             <Route path="/character/:characterId/extras" element={<CharacterExtras />} />
+            <Route path="/character/:characterId/memories" element={<Memories />} />
             <Route path="/group/new" element={<GroupEdit />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
