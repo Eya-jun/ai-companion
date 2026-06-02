@@ -10,6 +10,7 @@ import memoriesRouter from './routes/memories';
 import extrasRouter from './routes/extras';
 import avatarsRouter from './routes/avatars';
 import authRouter from './routes/auth';
+import profileRouter from './routes/profile';
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.get('/api/health', (_req, res) => {
 
 // 路由
 app.use('/api/auth', authRouter);
+app.use('/api/profile', profileRouter);
 app.use('/api/characters', charactersRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/groups', groupsRouter);
