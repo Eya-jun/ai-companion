@@ -68,7 +68,7 @@ router.get('/me', requireAuth, async (req, res) => {
 
 router.post('/claim-legacy', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const result = await claimLegacy(userId);
     res.json({ success: true, data: result });
   } catch (e: any) {

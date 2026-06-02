@@ -22,7 +22,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     if (error || !data.user) {
       return res.status(401).json({ success: false, error: '未授权: token 无效' });
     }
-    (req as any).user = { id: data.user.id, email: data.user.email };
+    req.user = { id: data.user.id, email: data.user.email ?? '' };
     next();
   } catch (err: any) {
     return res.status(500).json({ success: false, error: '鉴权失败: ' + err.message });
@@ -42,7 +42,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   const supabase = getSupabaseClient();
   supabase.auth.getUser(token)
     .then(({ data }) => {
-      if (data.user) (req as any).user = { id: data.user.id, email: data.user.email };
+      if (data.user) req.user = { id: data.user.id, email: data.user.email ?? '' };
       next();
     })
     .catch(() => next());

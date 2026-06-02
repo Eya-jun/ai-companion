@@ -8,7 +8,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // GET /api/profile - 返回当前用户的 user_profiles
 router.get('/', requireAuth, async (req, res) => {
-  const userId = (req as any).user.id;
+  const userId = req.user!.id;
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from('user_profiles')
@@ -21,7 +21,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 // PUT /api/profile - 更新当前用户的 user_profiles
 router.put('/', requireAuth, async (req, res) => {
-  const userId = (req as any).user.id;
+  const userId = req.user!.id;
   const { display_name, preferred_name, gender, age, occupation, mbti, bio } = req.body;
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -45,7 +45,7 @@ router.put('/', requireAuth, async (req, res) => {
 
 // POST /api/profile/avatar - 上传头像(按 user_id 分目录)
 router.post('/avatar', requireAuth, upload.single('file'), async (req, res) => {
-  const userId = (req as any).user.id;
+  const userId = req.user!.id;
   const file = req.file;
   if (!file) return res.status(400).json({ success: false, error: '没有文件' });
   if (file.size > 2 * 1024 * 1024) return res.status(400).json({ success: false, error: '文件超过 2MB' });
