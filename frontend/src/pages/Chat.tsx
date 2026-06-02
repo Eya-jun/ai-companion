@@ -95,17 +95,7 @@ export default function Chat() {
     }
   };
 
-  const handleSummarize = async () => {
-    if (!characterId) return;
-    if (!confirm('生成今天的记忆总结？')) return;
-    try {
-      const res = await memoriesApi.summarize(characterId, undefined, model);
-      setLatestMemory(res.data);
-      alert('记忆已生成！');
-    } catch (e: any) {
-      alert('生成失败：' + e.message);
-    }
-  };
+  // Suppress unused warning - handleSummarize removed
 
   const handleClear = async () => {
     if (!characterId) return;
