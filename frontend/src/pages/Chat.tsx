@@ -251,6 +251,58 @@ export default function Chat() {
           onClose={() => setShowCelebration(false)}
         />
       )}
+
+      {/* Dev 工具:快速调亲和度(只 DEV 模式显示) */}
+      {import.meta.env.DEV && characterId && (
+        <DevAffinityPanel
+          characterId={characterId}
+          current={affinity?.affinity ?? 0}
+          onSet={async (v) => {
+            try {
+              const r = await affinityApi.set(characterId, v);
+              setAffinity(s => s ? { ...s, affinity: r.data.affinity, stage: r.data.stage as any, unlockedAt: r.data.unlockedAt } : s);
+              // 重设 localStorage 庆祝标志(允许重新弹)
+              if (v >= 100) localStorage.removeItem(`seen_celebration_for_${characterId}`);
+            } catch (e: any) {
+              alert('设置失败: ' + e.message);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* Dev 工具:浮在右下角的小面板 */
+function DevAffinityPanel({ characterId, current, onSet }: { characterId: string; current: number; onSet: (v: number) => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const handle = async (v: number) => {
+    if (busy) return;
+    setBusy(true);
+    try { await onSet(v); } finally { setBusy(false); }
+  };
+  return (
+    <div style={{
+      position: 'fixed', right: 12, bottom: 12, zIndex: 50,
+      background: 'rgba(0,0,0,0.85)', color: 'white',
+      padding: '6px 8px', borderRadius: 8, fontSize: 11,
+      display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end',
+    }}>
+      <div style={{ opacity: 0.7 }}>🛠 DEV 亲密度(当前 {current}%)</div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {[0, 25, 50, 80, 100].map(v => (
+          <button
+            key={v}
+            onClick={() => handle(v)}
+            disabled={busy}
+            style={{
+              padding: '2px 6px', fontSize: 11, cursor: 'pointer',
+              background: current === v ? '#FF6B9D' : '#333',
+              color: 'white', border: 'none', borderRadius: 4,
+            }}
+          >{v}</button>
+        ))}
+      </div>
     </div>
   );
 }
