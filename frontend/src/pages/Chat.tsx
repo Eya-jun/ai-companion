@@ -40,10 +40,15 @@ export default function Chat() {
         affinityApi.get(characterId).catch(() => ({ data: null })),
       ]);
       setCharacter(char.data);
-      setMessages(msgs.data);
+      // 防御性排序:无论 API 返回什么顺序,按 created_at 升序
+      const sorted = [...(msgs.data || [])].sort((a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      setMessages(sorted);
       setLatestMemory(mem.data);
       if (aff.data) setAffinity(aff.data);
     } catch (e: any) {
+      console.error('[Chat] loadAll failed:', e);
       alert('加载失败：' + e.message);
     }
   };
@@ -59,8 +64,12 @@ export default function Chat() {
   }, [affinity?.unlockedAt, characterId]);
 
   const send = async () => {
-    if (!input.trim() || !characterId || loading) return;
+    if (!characterId || loading) return;
     const userText = input.trim();
+    if (!userText) {
+      alert('消息不能为空');
+      return;
+    }
     setInput('');
     setLoading(true);
 
