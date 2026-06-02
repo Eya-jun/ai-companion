@@ -32,7 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profileApi.get()
         .then(r => setProfile(r.data))
         .then(() => claimLegacyIfNeeded())
-        .catch(() => setStoredSession(null))
+        .catch(() => {
+          // client.ts 收到 401 已经清过 localStorage,这里同步 React state
+          setStoredSession(null);
+          setSession(null);
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);

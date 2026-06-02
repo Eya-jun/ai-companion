@@ -57,7 +57,8 @@ export async function logoutUser(_accessToken: string) {
 }
 
 export async function getProfile(accessToken: string) {
-  const supabase = getSupabaseClient();
+  // 用 admin 客户端绕过 RLS(requireAuth 中间件已经验过 token 有效性)
+  const supabase = getSupabaseAdmin();
   const { data: userData, error: userErr } = await supabase.auth.getUser(accessToken);
   if (userErr || !userData.user) throw new Error('token 无效');
   const { data: profile, error: profErr } = await supabase
