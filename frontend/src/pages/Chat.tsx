@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { charactersApi, chatApi, memoriesApi, affinityApi } from '../api/client';
+import { charactersApi, chatApi, memoriesApi, affinityApi, sendStream } from '../api/client';
 import type { Character, Message, LLMProvider, AffinityState } from '../api/types';
 import MessageBubble from '../components/MessageBubble';
 import AffinityMeter from '../components/AffinityMeter';
@@ -64,7 +64,7 @@ export default function Chat() {
     setInput('');
     setLoading(true);
 
-    // 乐观更新
+    // 乐观插入用户消息
     const tempUserMsg: Message = {
       id: 'temp-' + Date.now(),
       character_id: characterId,
@@ -76,19 +76,34 @@ export default function Chat() {
     };
     setMessages(prev => [...prev, tempUserMsg]);
 
+    // 插入一个空的 AI 消息,流式填充 content
+    const aiMsgId = 'temp-ai-' + Date.now();
+    const aiMsg: Message = {
+      id: aiMsgId,
+      character_id: characterId,
+      role: 'assistant',
+      content: '',
+      sender_type: 'character',
+      sender_name: character?.name || 'AI',
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, aiMsg]);
+
     try {
-      const res = await chatApi.send(characterId, userText, model);
-      const aiMsg: Message = {
-        id: 'temp-ai-' + Date.now(),
-        character_id: characterId,
-        role: 'assistant',
-        content: res.data.aiResponse,
-        sender_type: 'character',
-        sender_name: character?.name || 'AI',
-        created_at: new Date().toISOString(),
-      };
-      setMessages(prev => [...prev, aiMsg]);
+      await sendStream(characterId, userText, model, (evt) => {
+        if ('delta' in evt) {
+          setMessages(prev => prev.map(m =>
+            m.id === aiMsgId ? { ...m, content: m.content + evt.delta } : m
+          ));
+        }
+        // done / meta / error 都不需要额外动作(meta 已由我们 set 了空消息)
+      });
+      // 流式完成后,从服务端 reload 一次,拿到真实 id(替代 temp id)
+      const msgs = await chatApi.getMessages(characterId);
+      setMessages(msgs.data);
     } catch (e: any) {
+      // 流失败时,移除空 AI 消息并提示
+      setMessages(prev => prev.filter(m => m.id !== aiMsgId));
       alert('发送失败：' + e.message);
     } finally {
       setLoading(false);
