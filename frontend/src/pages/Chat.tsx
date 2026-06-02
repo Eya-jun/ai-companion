@@ -255,7 +255,6 @@ export default function Chat() {
       {/* Dev 工具:快速调亲和度(只 DEV 模式显示) */}
       {import.meta.env.DEV && characterId && (
         <DevAffinityPanel
-          characterId={characterId}
           current={affinity?.affinity ?? 0}
           onSet={async (v) => {
             try {
@@ -274,7 +273,7 @@ export default function Chat() {
 }
 
 /* Dev 工具:浮在右下角的小面板 */
-function DevAffinityPanel({ characterId, current, onSet }: { characterId: string; current: number; onSet: (v: number) => Promise<void> }) {
+function DevAffinityPanel({ current, onSet }: { current: number; onSet: (v: number) => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const handle = async (v: number) => {
     if (busy) return;
