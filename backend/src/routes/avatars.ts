@@ -14,9 +14,10 @@ const upload = multer({
   },
 });
 
-// 上传头像到 Supabase Storage
+// 上传角色头像(按 user_id 分目录,避免不同用户的角色头像冲突)
 router.post('/upload/:characterId', upload.single('file'), async (req, res) => {
   try {
+    const userId = req.user!.id;
     const supabase = getSupabaseAdmin();
     const { characterId } = req.params;
     const file = req.file;
@@ -24,49 +25,54 @@ router.post('/upload/:characterId', upload.single('file'), async (req, res) => {
     if (!file) {
       return res.status(400).json({ success: false, error: '没有文件' });
     }
-
     if (file.size > 2 * 1024 * 1024) {
       return res.status(400).json({ success: false, error: '文件超过 2MB' });
     }
 
-    // 生成文件名
-    const ext = file.mimetype.split('/')[1] || 'jpg';
-    const fileName = `${characterId}-${Date.now()}.${ext}`;
+    // 校验角色所有权:预设不允许改,自定义必须是当前用户的
+    const { data: character } = await supabase
+      .from('characters')
+      .select('user_id, is_preset')
+      .eq('id', characterId)
+      .single();
+    if (!character) return res.status(404).json({ success: false, error: '角色不存在' });
+    if (character.is_preset) {
+      return res.status(403).json({ success: false, error: '预设角色不能改头像' });
+    }
+    if (character.user_id !== userId) {
+      return res.status(403).json({ success: false, error: '无权修改此角色' });
+    }
 
-    // 上传到 Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // 文件名:按 user_id 分目录
+    const safeExt = file.mimetype === 'image/png' ? 'png'
+      : file.mimetype === 'image/webp' ? 'webp'
+      : 'jpg';
+    const fileName = `${userId}/${characterId}-${Date.now()}.${safeExt}`;
+
+    // 强制 contentType 为白名单之一
+    const safeContentType = file.mimetype === 'image/png' ? 'image/png'
+      : file.mimetype === 'image/webp' ? 'image/webp'
+      : 'image/jpeg';
+    const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(fileName, file.buffer, {
-        contentType: file.mimetype,
+        contentType: safeContentType,
         upsert: true,
       });
-
     if (uploadError) throw uploadError;
 
-    // 获取公开 URL
-    const { data: urlData } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(fileName);
-
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
     const publicUrl = urlData.publicUrl;
 
-    // 更新角色的 avatar 字段
     const { data: charData, error: updateError } = await supabase
       .from('characters')
       .update({ avatar: publicUrl })
       .eq('id', characterId)
       .select()
       .single();
-
     if (updateError) throw updateError;
 
-    res.json({
-      success: true,
-      data: {
-        url: publicUrl,
-        character: charData,
-      },
-    });
+    res.json({ success: true, data: { url: publicUrl, character: charData } });
   } catch (error: any) {
     console.error('Avatar upload error:', error);
     res.status(500).json({ success: false, error: error.message });
