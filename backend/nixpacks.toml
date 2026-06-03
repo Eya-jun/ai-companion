@@ -1,0 +1,14 @@
+# Nixpacks(Railway 默认 build 器)配置
+# 显式指定 build / start 步骤,避免 Railway 猜错
+
+[phases.setup]
+aptPkgs = []
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "node dist/index.js"
