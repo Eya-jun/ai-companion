@@ -17,7 +17,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [model, setModel] = useState<LLMProvider>('kimi');
+  const [model, setModel] = useState<LLMProvider>('deepseek');
   const [affinity, setAffinity] = useState<AffinityState | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [latestMemory, setLatestMemory] = useState<any>(null);
