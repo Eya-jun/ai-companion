@@ -1,0 +1,49 @@
+/* Mirrors .avatar / .avatar.user / .avatar.<theme> in prototype.html */
+
+.root {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--ring-from, transparent), var(--ring-to, transparent) 70%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.size-sm { width: 30px; height: 30px; font-size: 11px; }
+.size-md { width: 40px; height: 40px; font-size: 13px; }
+.size-lg { width: 52px; height: 52px; font-size: 17px; }
+.size-xl { width: 86px; height: 86px; font-size: 30px; }
+
+.theme-a { background: var(--a-grad); }
+.theme-b { background: var(--b-grad); }
+.theme-c { background: var(--c-grad); }
+.theme-d { background: var(--d-grad); }
+.theme-user {
+  background: var(--user-grad);
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.theme-a .ring { --ring-from: var(--a-2); --ring-to: rgba(135, 169, 143, 0.1); }
+.theme-b .ring { --ring-from: var(--b-2); --ring-to: rgba(197, 212, 224, 0.1); }
+.theme-c .ring { --ring-from: var(--c-2); --ring-to: rgba(197, 181, 208, 0.1); }
+.theme-d .ring { --ring-from: var(--d-2); --ring-to: rgba(232, 217, 192, 0.1); }
