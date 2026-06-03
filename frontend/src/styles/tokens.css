@@ -1,0 +1,90 @@
+/* Vélin · 尺素 — Design tokens
+   iOS 18 Premium aesthetic: dark canvas, glass surfaces, refined typography.
+   Source of truth for every color / spacing / type / motion value in the app. */
+
+:root {
+  /* ============ Surfaces (dark canvas) ============ */
+  --canvas: #16161a;
+  --canvas-2: #1c1c21;
+  --canvas-3: #23232a;
+
+  /* ============ Glass surfaces ============ */
+  --glass-1: rgba(255, 255, 255, 0.04);
+  --glass-2: rgba(255, 255, 255, 0.06);
+  --glass-3: rgba(255, 255, 255, 0.09);
+  --hair: rgba(255, 255, 255, 0.06);
+  --hair-2: rgba(255, 255, 255, 0.10);
+
+  /* ============ Text ============ */
+  --text: #ededef;
+  --text-2: #b8b8c0;
+  --text-mute: #8a8a92;
+  --text-dim: #5e5e66;
+
+  /* ============ Accent / brand ============ */
+  --accent: #ededef;
+  --accent-glow: rgba(255, 255, 255, 0.20);
+
+  /* ============ Status ============ */
+  --online: #4ade80;
+  --unread: #ff453a;
+  --danger: #ff453a;
+
+  /* ============ Spacing (8pt grid) ============ */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 56px;
+
+  /* ============ Radii ============ */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-2xl: 28px;
+  --r-pill: 999px;
+
+  /* ============ Typography ============ */
+  --font-sans: "Inter", "SF Pro Display", "SF Pro Text", "PingFang SC",
+               "Helvetica Neue", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: "Inter", "SF Pro Display", "PingFang SC", system-ui, sans-serif;
+
+  --t-display: 36px;
+  --t-title: 22px;
+  --t-headline: 17px;
+  --t-body: 15px;
+  --t-callout: 14.5px;
+  --t-sub: 13px;
+  --t-caption: 11px;
+  --t-micro: 10px;
+
+  --track-tight: -0.03em;
+  --track-normal: -0.01em;
+  --track-loose: 0.04em;
+  --track-caps: 0.06em;
+
+  /* ============ Motion ============ */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.5, 1.5, 0.6, 1);
+  --dur-quick: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 400ms;
+
+  /* ============ Z-index ============ */
+  --z-bg: 0;
+  --z-content: 10;
+  --z-tabbar: 20;
+  --z-header: 30;
+  --z-modal: 100;
+}
+
+[data-theme="a"] { --a-1: #87a98f; --a-2: #b3cdb8; --a-grad: linear-gradient(135deg, #87a98f 0%, #4a7560 100%); }
+[data-theme="b"] { --b-1: #c5d4e0; --b-2: #dfe9f0; --b-grad: linear-gradient(135deg, #c5d4e0 0%, #8aa1b6 100%); }
+[data-theme="c"] { --c-1: #c5b5d0; --c-2: #d8c9e2; --c-grad: linear-gradient(135deg, #c5b5d0 0%, #8a78a3 100%); }
+[data-theme="d"] { --d-1: #e8d9c0; --d-2: #f0e4cf; --d-grad: linear-gradient(135deg, #e8d9c0 0%, #b8a587 100%); }
+[data-theme="user"] { --user-1: #3a3a44; --user-2: #2a2a32; --user-grad: linear-gradient(135deg, #3a3a44 0%, #25252d 100%); }
