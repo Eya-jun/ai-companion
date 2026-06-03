@@ -1,0 +1,23 @@
+/* Mirrors .search-pill in prototype.html */
+.root {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-pill);
+  color: var(--text-mute);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease);
+}
+.root:hover, .root:focus-visible {
+  background: var(--glass-2);
+  outline: none;
+}
+.icon { color: var(--text-dim); flex-shrink: 0; }
+.label { color: var(--text-dim); }
