@@ -1,0 +1,53 @@
+/* Mirrors .chat-header in prototype.html */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 10px var(--s-4);
+  min-height: 52px;
+}
+.btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+.info {
+  flex: 1;
+  min-width: 0;
+}
+.name {
+  font-size: var(--t-headline);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-tight);
+  line-height: 1.1;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-micro);
+  color: var(--text-mute);
+  margin-top: 2px;
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--online);
+  box-shadow: 0 0 6px var(--online);
+}
+.avatar-stack {
+  position: relative;
+  width: 40px; height: 30px;
+  flex-shrink: 0;
+}
+.avatar-stack > * { position: absolute; }
+.avatar-stack > *:first-child { left: 0; top: 0; }
+.avatar-stack > *:last-child { right: 0; bottom: 0; }
