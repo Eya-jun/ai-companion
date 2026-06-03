@@ -14,12 +14,16 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    console.log('[Login] start', { email });
     try {
       await login(email, password);
+      console.log('[Login] success, navigating to /');
       navigate('/');
     } catch (e: any) {
+      console.log('[Login] error:', e);
       setError(e.message);
     } finally {
+      console.log('[Login] finally, clearing loading');
       setLoading(false);
     }
   };
