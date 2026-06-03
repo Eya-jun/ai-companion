@@ -13,7 +13,7 @@ export default function GroupChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [triggering, setTriggering] = useState(false);
-  const [model, setModel] = useState<LLMProvider>('kimi');
+  const [model, setModel] = useState<LLMProvider>('deepseek');
   const [triggerAll, setTriggerAll] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
