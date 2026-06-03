@@ -3,31 +3,38 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+/* ===== Hero ===== */
+
 .hero {
-  height: 340px;
   position: relative;
+  height: 320px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--s-3);
   overflow: hidden;
+  background: linear-gradient(180deg, #2a2a32 0%, var(--canvas) 100%);
 }
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--hero-grad, var(--canvas));
-  z-index: 0;
-}
+
+[data-theme="a"] .hero { background: linear-gradient(180deg, #2a4434 0%, var(--canvas) 100%); }
+[data-theme="b"] .hero { background: linear-gradient(180deg, #2c3a4a 0%, var(--canvas) 100%); }
+[data-theme="c"] .hero { background: linear-gradient(180deg, #3a2c4a 0%, var(--canvas) 100%); }
+[data-theme="d"] .hero { background: linear-gradient(180deg, #4a3c2c 0%, var(--canvas) 100%); }
+[data-theme="user"] .hero { background: linear-gradient(180deg, #2a2a32 0%, var(--canvas) 100%); }
+
 .hero::after {
   content: "";
   position: absolute;
   inset: 0;
   background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.08) 0%, transparent 60%);
-  z-index: 0;
+  pointer-events: none;
 }
+
 .hero-content {
   position: relative;
   z-index: 1;
@@ -36,18 +43,17 @@
   align-items: center;
   gap: var(--s-2);
   animation: fade-up 0.9s var(--ease) both;
+  margin-top: var(--s-2);
 }
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+
 .hero-name {
   font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--track-tight);
   color: var(--text);
   margin-top: 6px;
 }
+
 .hero-tag {
   font-size: var(--t-micro);
   color: var(--text-mute);
@@ -55,9 +61,17 @@
   border-radius: var(--r-pill);
   background: var(--glass-1);
   border: 1px solid var(--hair);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
 }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Body ===== */
+
 .body {
   padding: var(--s-5) var(--s-4) var(--s-7);
   display: flex;
@@ -65,50 +79,67 @@
   gap: var(--s-5);
   background: var(--canvas);
 }
+
 .desc {
   font-size: var(--t-body);
   line-height: 1.6;
   color: var(--text-2);
 }
+
 .stats-row {
   display: flex;
   gap: 10px;
 }
+
 .section-title {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   padding: 0 2px;
 }
+
 .section-title h3 {
   font-size: var(--t-headline);
   font-weight: 600;
   color: var(--text);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--track-tight);
+  margin: 0;
 }
+
 .more {
   font-size: var(--t-sub);
   color: var(--text-mute);
+  cursor: pointer;
 }
+
 .memories {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
+  margin-top: 12px;
 }
+
+.memories-empty {
+  color: var(--text-dim);
+  text-align: center;
+  padding: 20px 0;
+  font-size: var(--t-body);
+}
+
+/* ===== Actions ===== */
+
 .actions {
   position: sticky;
   bottom: 0;
   display: flex;
   gap: var(--s-2);
-  padding: var(--s-3) 0 calc(var(--s-3) + env(safe-area-inset-bottom, 0));
+  padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0));
   background: rgba(22, 22, 26, 0.72);
   border-top: 1px solid var(--hair);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  margin: 0 calc(-1 * var(--s-4));
-  padding-left: var(--s-4);
-  padding-right: var(--s-4);
 }
+
 .btn {
   flex: 1;
   display: flex;
@@ -119,13 +150,30 @@
   border-radius: var(--r-pill);
   font-size: var(--t-callout);
   font-weight: 500;
+  font-family: inherit;
   color: var(--text);
   background: var(--glass-1);
   border: 1px solid var(--hair);
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease);
 }
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:hover {
+  background: var(--glass-2);
+  border-color: var(--hair-2);
+}
+
 .btn-primary {
   background: linear-gradient(135deg, var(--accent) 0%, #c0c0c8 100%);
   color: var(--canvas);
   border-color: transparent;
   font-weight: 600;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
 }

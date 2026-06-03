@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { charactersApi, affinityApi, memoriesApi } from '../api/client';
 import type { Character, AffinityState, AffinityStage } from '../api/types';
@@ -62,21 +62,13 @@ export default function CharacterDetail() {
   }
 
   const theme: ThemeKey = themeFor(character.name);
-  const heroStyle = ({
-    '--hero-grad':
-      theme === 'a' ? 'linear-gradient(180deg, #2a4434 0%, #16161a 100%)' :
-      theme === 'b' ? 'linear-gradient(180deg, #2c3a4a 0%, #16161a 100%)' :
-      theme === 'c' ? 'linear-gradient(180deg, #3a2c4a 0%, #16161a 100%)' :
-                      'linear-gradient(180deg, #4a3c2c 0%, #16161a 100%)',
-  } as CSSProperties);
 
   return (
     <AppShell showTabBar={false} blobTheme={theme}>
       <div className={styles.page}>
-        <div className={styles.hero} style={heroStyle} data-theme={theme}>
-          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2 }}>
-            <ChatHeader title="" showBack />
-          </div>
+        <ChatHeader title={character.name} subtitle="在线 · 刚刚" live showBack />
+
+        <div className={styles.hero} data-theme={theme}>
           <div className={styles['hero-content']}>
             <Avatar theme={theme} label={character.name.charAt(0)} size="xl" />
             <div className={styles['hero-name']}>{character.name}</div>
@@ -102,10 +94,10 @@ export default function CharacterDetail() {
                 查看全部 →
               </span>
             </div>
-            <div className={styles.memories} style={{ marginTop: 12 }}>
+            <div className={styles.memories}>
               {recentMemories.length === 0 ? (
-                <div className={styles.desc} style={{ color: 'var(--text-dim)', textAlign: 'center', padding: '20px 0' }}>
-                  还没有关键记忆,多聊聊就会有了
+                <div className={styles['memories-empty']}>
+                  还没有关键记忆，多聊聊就会有了
                 </div>
               ) : (
                 recentMemories.map((m, i) => (
