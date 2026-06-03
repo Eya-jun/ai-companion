@@ -1,0 +1,167 @@
+/* Mirrors Home.module.css nav + CharacterCard card */
+.page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.nav {
+  padding: 6px 24px 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 8px 0 4px;
+}
+.title {
+  font-size: var(--t-display);
+  font-weight: 700;
+  letter-spacing: var(--track-tight);
+  color: var(--text);
+  line-height: 1.05;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.icon-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+}
+.sub {
+  padding: 4px 2px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.label {
+  font-size: var(--t-sub);
+  color: var(--text-mute);
+  letter-spacing: 0.02em;
+}
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 100px;
+  -webkit-overflow-scrolling: touch;
+}
+.empty {
+  padding: 60px 24px;
+  text-align: center;
+  color: var(--text-mute);
+  font-size: var(--t-sub);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+}
+.empty-text {
+  color: var(--text-mute);
+  font-size: var(--t-sub);
+}
+.cta {
+  padding: 10px 22px;
+  border-radius: var(--r-pill);
+  background: var(--c-2);
+  color: white;
+  font-size: var(--t-sub);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(168, 132, 248, 0.32);
+}
+.cta:active {
+  transform: scale(0.97);
+}
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid var(--hair-2);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  margin: 80px auto;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Group card — mirrors CharacterCard with theme accent */
+.group-card {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-lg);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  margin-bottom: var(--s-2);
+  position: relative;
+  overflow: hidden;
+  transition: background var(--dur-quick) var(--ease);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.group-card:active {
+  background: var(--glass-2);
+}
+.group-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 16px; bottom: 16px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.7;
+}
+.theme-a::before { background: var(--a-2); }
+.theme-b::before { background: var(--b-2); }
+.theme-c::before { background: var(--c-2); }
+.theme-d::before { background: var(--d-2); }
+
+.card-meta {
+  flex: 1;
+  min-width: 0;
+}
+.card-top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin-bottom: 4px;
+}
+.card-name {
+  font-size: var(--t-headline);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.card-members {
+  font-size: var(--t-sub);
+  color: var(--text-mute);
+  letter-spacing: 0.01em;
+}
+.card-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--glass-2);
+  border: 1px solid var(--hair);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-headline);
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}

@@ -4,6 +4,7 @@ import RequireAuth from './components/RequireAuth';
 import Home from './pages/Home';
 import Chat from './pages/Chat';
 import GroupChat from './pages/GroupChat';
+import GroupList from './pages/GroupList';
 import CharacterEdit from './pages/CharacterEdit';
 import CharacterDetail from './pages/CharacterDetail';
 import GroupEdit from './pages/GroupEdit';
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/profile/setup" element={<UserProfileSetup />} />
             <Route path="/chat/:characterId" element={<Chat />} />
+            <Route path="/group" element={<GroupList />} />
             <Route path="/group/:groupId" element={<GroupChat />} />
             <Route path="/character/:characterId" element={<CharacterDetail />} />
             <Route path="/character/new" element={<CharacterEdit />} />
