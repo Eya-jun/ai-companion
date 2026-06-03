@@ -174,12 +174,13 @@ export async function initPresetCharacters() {
       });
       console.log(`✅ 初始化预设角色: ${preset.name}`);
     } else {
+      // 关键:update 时 **不** 覆盖 avatar 字段,保留用户上传过的头像。
+      // 之前这里强制写 avatar: preset.avatar,每次后端启动都把用户头像重置回 emoji。
       await supabase
         .from('characters')
         .update({
           description: preset.description,
           system_prompt: preset.system_prompt,
-          avatar: preset.avatar,
           greeting: preset.greeting,
         })
         .eq('id', existing.id);
