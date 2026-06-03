@@ -1,0 +1,57 @@
+/* Mirrors .stat .ring in prototype.html */
+.root {
+  padding: 14px 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+}
+.root::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--accent, var(--hair-2));
+  opacity: 0.5;
+}
+.theme-a { --accent: var(--a-2); }
+.theme-b { --accent: var(--b-2); }
+.theme-c { --accent: var(--c-2); }
+.theme-d { --accent: var(--d-2); }
+
+.ring {
+  width: 56px; height: 56px;
+  position: relative;
+}
+.ring svg { transform: rotate(-90deg); }
+.track { stroke: var(--glass-2); }
+.bar {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--accent));
+  transition: stroke-dashoffset var(--dur-slow) var(--ease);
+}
+.val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.lbl {
+  font-size: var(--t-caption);
+  color: var(--text-mute);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+}
