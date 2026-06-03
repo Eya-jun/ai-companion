@@ -1,0 +1,30 @@
+/* Vélin · 尺素 — Glass utility classes
+   Apply to any panel / card / chrome that should feel like frosted glass. */
+
+.glass {
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.glass-strong {
+  background: var(--glass-3);
+  border: 1px solid var(--hair-2);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+}
+
+.glass-tabbar {
+  background: rgba(22, 22, 26, 0.72);
+  border-top: 1px solid var(--hair);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+}
+
+.glass-header {
+  background: rgba(22, 22, 26, 0.55);
+  border-bottom: 1px solid var(--hair);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
