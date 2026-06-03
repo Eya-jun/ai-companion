@@ -1,0 +1,210 @@
+/* Vélin · CharacterEdit — form page */
+
+.page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-4) calc(var(--s-9) + env(safe-area-inset-bottom, 0));
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.label {
+  display: block;
+  font-size: var(--t-caption);
+  font-weight: 500;
+  color: var(--text-mute);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  padding: 0 2px;
+}
+
+.required {
+  color: var(--text);
+  margin-left: 2px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: var(--t-body);
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--dur-base) var(--ease),
+              background var(--dur-base) var(--ease);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--text-mute);
+  background: var(--glass-2);
+}
+
+.input:disabled,
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.6;
+  min-height: 120px;
+}
+
+.textarea-lg {
+  min-height: 280px;
+}
+
+.hint {
+  font-size: var(--t-caption);
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding: 0 2px;
+}
+
+/* ===== Avatar picker ===== */
+
+.avatar-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+}
+
+.avatar-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  background: var(--glass-2);
+  border: 1px solid var(--hair-2);
+  box-shadow: 0 0 0 4px var(--glass-1);
+}
+
+.avatar-list {
+  display: flex;
+  gap: var(--s-2);
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.avatar-list::-webkit-scrollbar {
+  display: none;
+}
+
+.avatar-option {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease);
+}
+
+.avatar-option:hover {
+  background: var(--glass-2);
+  border-color: var(--hair-2);
+}
+
+.avatar-option.active {
+  background: var(--glass-3);
+  border-color: var(--text-mute);
+  box-shadow: 0 0 0 1px var(--text-mute) inset;
+}
+
+/* ===== Bottom action bar ===== */
+
+.actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0));
+  background: rgba(22, 22, 26, 0.72);
+  border-top: 1px solid var(--hair);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.btn {
+  flex: 1;
+  height: 44px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: var(--t-callout);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease);
+  border: 1px solid var(--hair);
+  background: var(--glass-1);
+  color: var(--text);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--glass-2);
+  border-color: var(--hair-2);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, #c0c0c8 100%);
+  color: var(--canvas);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}

@@ -1,23 +1,33 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { charactersApi, extrasApi, affinityApi } from '../api/client';
-import type { AffinityState } from '../api/types';
+import type { AffinityState, Character } from '../api/types';
+import AppShell from '../components/AppShell';
+import ChatHeader from '../components/velin/ChatHeader';
 import ExtraRow, { type Extra } from '../components/ExtraRow';
-import './Extras.css';
+import styles from './CharacterExtras.module.css';
 
-const TABS = [
-  { type: 'note' as const, label: '补充设定', desc: '语气、习惯、个性化设定' },
-  { type: 'story' as const, label: '故事背景', desc: '你们之间发生过的故事' },
-  { type: 'relationship' as const, label: '关系记录', desc: '关系进展、关键时刻' },
-  { type: 'memory_hint' as const, label: '记忆提示', desc: '提醒 AI 注意的事' },
+type ExtraType = 'note' | 'story' | 'relationship' | 'memory_hint';
+
+const TABS: Array<{ type: ExtraType; label: string; desc: string }> = [
+  { type: 'note', label: '补充设定', desc: '语气、习惯、个性化设定' },
+  { type: 'story', label: '故事背景', desc: '你们之间发生过的故事' },
+  { type: 'relationship', label: '关系记录', desc: '关系进展、关键时刻' },
+  { type: 'memory_hint', label: '记忆提示', desc: '提醒 AI 注意的事' },
 ];
+
+const STAGE_LABEL: Record<AffinityState['stage'], string> = {
+  stranger: '陌生',
+  familiar: '熟悉',
+  flirtatious: '暧昧',
+  intimate: '亲密',
+};
 
 export default function CharacterExtras() {
   const { characterId } = useParams();
-  const navigate = useNavigate();
-  const [character, setCharacter] = useState<any>(null);
+  const [character, setCharacter] = useState<Character | null>(null);
   const [extras, setExtras] = useState<Extra[]>([]);
-  const [activeTab, setActiveTab] = useState<typeof TABS[number]['type']>('note');
+  const [activeTab, setActiveTab] = useState<ExtraType>('note');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Extra | null>(null);
   const [form, setForm] = useState({ title: '', content: '' });
@@ -33,7 +43,7 @@ export default function CharacterExtras() {
         affinityApi.get(characterId).catch(() => ({ data: null })),
       ]);
       setCharacter(ch.data);
-      setExtras(ext.data);
+      setExtras(ext.data as Extra[]);
       if (aff.data) setAffinity(aff.data);
     } catch (e: any) {
       alert('加载失败: ' + e.message);
@@ -67,7 +77,10 @@ export default function CharacterExtras() {
     setAffinityBusy(true);
     try {
       const r = await affinityApi.set(characterId, v);
-      setAffinity(s => s ? { ...s, affinity: r.data.affinity, stage: r.data.stage as any, unlockedAt: r.data.unlockedAt } : s);
+      setAffinity(s => s
+        ? { ...s, affinity: r.data.affinity, stage: r.data.stage as AffinityState['stage'], unlockedAt: r.data.unlockedAt }
+        : s
+      );
       if (v >= 100) localStorage.removeItem(`seen_celebration_for_${characterId}`);
     } catch (e: any) {
       alert('设置失败: ' + e.message);
@@ -76,97 +89,151 @@ export default function CharacterExtras() {
     }
   };
 
-  if (!character) return <div className="extras-loading">加载中...</div>;
+  if (!character) {
+    return (
+      <AppShell showTabBar={false}>
+        <div className={styles.loading}>加载中…</div>
+      </AppShell>
+    );
+  }
 
   const filtered = extras.filter(e => e.type === activeTab);
   const activeInfo = TABS.find(t => t.type === activeTab)!;
+  const showFab = activeTab !== 'relationship';
 
   return (
-    <div className="extras-page">
-      <header className="extras-header">
-        <button className="back-btn" onClick={() => navigate(`/chat/${characterId}`)}>←</button>
-        <div className="extras-header-info">
-          <strong>{character.name}</strong>
-          <div style={{ fontSize: 11, color: '#888' }}>补充资料管理</div>
+    <AppShell showTabBar={false} blobTheme="a">
+      <div className={styles.page}>
+        <ChatHeader title={`${character.name} · 补充资料`} showBack />
+
+        <div className={styles.tabs} role="tablist">
+          {TABS.map(tab => {
+            const count = extras.filter(e => e.type === tab.type).length;
+            const isActive = activeTab === tab.type;
+            return (
+              <button
+                key={tab.type}
+                role="tab"
+                aria-selected={isActive}
+                className={`${styles.tab} ${isActive ? styles.active : ''}`}
+                onClick={() => setActiveTab(tab.type)}
+              >
+                <span>{tab.label}</span>
+                <span className={styles['tab-count']}>({count})</span>
+              </button>
+            );
+          })}
         </div>
-        {activeTab !== 'relationship' && (
-          <button className="btn-add" onClick={() => { setEditing(null); setForm({ title: '', content: '' }); setShowModal(true); }}>+ 新增</button>
-        )}
-        {activeTab === 'relationship' && <div style={{ width: 60 }} />}
-      </header>
 
-      {/* 4 Tabs */}
-      <div style={{ display: 'flex', borderBottom: '2px solid #eee', overflowX: 'auto', background: 'white' }}>
-        {TABS.map(tab => {
-          const count = extras.filter(e => e.type === tab.type).length;
-          return (
-            <button
-              key={tab.type}
-              onClick={() => setActiveTab(tab.type)}
-              style={{
-                padding: '10px 14px', border: 'none',
-                borderBottom: activeTab === tab.type ? '2px solid #FF6B9D' : '2px solid transparent',
-                marginBottom: -2, background: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-                fontWeight: activeTab === tab.type ? 'bold' : 'normal',
-                color: activeTab === tab.type ? '#FF6B9D' : '#666',
-                fontSize: 13,
-              }}
-            >
-              {tab.label} ({count})
-            </button>
-          );
-        })}
-      </div>
+        <div className={styles.body}>
+          <p className={styles.desc}>{activeInfo.desc}</p>
 
-      <div style={{ padding: 12 }}>
-        <p style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>{activeInfo.desc}</p>
+          {activeTab === 'relationship' && (
+            <AffinityControlPanel
+              affinity={affinity}
+              busy={affinityBusy}
+              onSet={handleAffinitySet}
+            />
+          )}
 
-        {/* 关系 tab:在 extras 列表上方嵌亲密度面板 */}
-        {activeTab === 'relationship' && (
-          <AffinityControlPanel
-            affinity={affinity}
-            busy={affinityBusy}
-            onSet={handleAffinitySet}
-          />
-        )}
+          {activeTab === 'relationship' && filtered.length > 0 && <div className={styles.divider} />}
 
-        {activeTab === 'relationship' && filtered.length > 0 && <div style={{ height: 12 }} />}
-
-        {activeTab !== 'relationship' && filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#aaa', padding: 32 }}>
-            还没有{activeInfo.label},点右上角"+ 新增"开始
-          </div>
-        ) : activeTab === 'relationship' && filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#aaa', padding: '12px 0' }}>
-            还没有{activeInfo.label},点上方"+ 新增"开始
-          </div>
-        ) : (
-          filtered.map(e => (
-            <ExtraRow key={e.id} extra={e} onUpdated={load} onDeleted={load} />
-          ))
-        )}
-      </div>
-
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{editing ? '编辑' : '新增'}{activeInfo.label}</h3>
-            <div className="form-group">
-              <label>标题 *</label>
-              <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+          {activeTab !== 'relationship' && filtered.length === 0 ? (
+            <div className={styles.empty}>
+              还没有{activeInfo.label}
+              <br />
+              点右下角 + 开始添加
             </div>
-            <div className="form-group">
-              <label>内容 *</label>
-              <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} rows={6} />
+          ) : activeTab === 'relationship' && filtered.length === 0 ? (
+            <div className={styles.empty}>
+              还没有{activeInfo.label}
+              <br />
+              点右上角 + 开始添加
             </div>
-            <div className="modal-actions">
-              <button onClick={() => setShowModal(false)}>取消</button>
-              <button onClick={handleSave}>保存</button>
+          ) : (
+            <div className={styles.list}>
+              {filtered.map(e => (
+                <ExtraRow key={e.id} extra={e} onUpdated={load} onDeleted={load} />
+              ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {showFab && (
+          <button
+            className={styles.fab}
+            onClick={() => { setEditing(null); setForm({ title: '', content: '' }); setShowModal(true); }}
+            aria-label="新增"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span>新增</span>
+          </button>
+        )}
+
+        {showModal && (
+          <div className={styles.overlay} onClick={() => setShowModal(false)}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()}>
+              <h3 className={styles['modal-title']}>
+                {editing ? '编辑' : '新增'}{activeInfo.label}
+              </h3>
+              <div>
+                <label className={styles.desc} style={{ display: 'block', marginBottom: 6 }}>
+                  标题 *
+                </label>
+                <input
+                  style={{
+                    width: '100%', padding: '10px 14px',
+                    background: 'var(--glass-1)', border: '1px solid var(--hair)',
+                    borderRadius: 'var(--r-md)', color: 'var(--text)',
+                    fontSize: 'var(--t-body)', outline: 'none', boxSizing: 'border-box',
+                  }}
+                  value={form.title}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
+                  placeholder="简短标题"
+                />
+              </div>
+              <div>
+                <label className={styles.desc} style={{ display: 'block', marginBottom: 6 }}>
+                  内容 *
+                </label>
+                <textarea
+                  style={{
+                    width: '100%', padding: '10px 14px', minHeight: 140,
+                    background: 'var(--glass-1)', border: '1px solid var(--hair)',
+                    borderRadius: 'var(--r-md)', color: 'var(--text)',
+                    fontSize: 'var(--t-body)', lineHeight: 1.6,
+                    fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box',
+                  }}
+                  value={form.content}
+                  onChange={e => setForm({ ...form, content: e.target.value })}
+                  rows={6}
+                  placeholder="详细内容..."
+                />
+              </div>
+              <div className={styles['modal-actions']}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles['btn-secondary']}`}
+                  onClick={() => setShowModal(false)}
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles['btn-primary']}`}
+                  onClick={handleSave}
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
 
@@ -178,53 +245,38 @@ function AffinityControlPanel({
   busy: boolean;
   onSet: (v: number) => void;
 }) {
-  const STAGE_LABEL: Record<AffinityState['stage'], string> = {
-    stranger: '陌生',
-    familiar: '熟悉',
-    flirtatious: '暧昧',
-    intimate: '亲密',
-  };
   const current = affinity?.affinity ?? 0;
   const stage = affinity?.stage ?? 'stranger';
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #FFF0F5 0%, #FFFFFF 100%)',
-      border: '1px solid #FFD9E5',
-      borderRadius: 12, padding: 16,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-        <strong style={{ fontSize: 14, color: '#FF6B9D' }}>当前亲密度</strong>
-        <span style={{ fontSize: 12, color: '#888' }}>阶段:{STAGE_LABEL[stage]}</span>
+    <div className={styles.affinity}>
+      <div className={styles['affinity-head']}>
+        <span className={styles['affinity-title']}>当前亲密度</span>
+        <span className={styles['affinity-stage']}>阶段：{STAGE_LABEL[stage]}</span>
       </div>
-      <div style={{ fontSize: 32, fontWeight: 'bold', color: '#FF6B9D', marginBottom: 4 }}>
-        {current}%
+      <div className={styles['affinity-value']}>{current}%</div>
+      <div className={styles['affinity-bar']}>
+        <div className={styles['affinity-bar-fill']} style={{ width: `${current}%` }} />
       </div>
-      <div style={{ height: 8, background: '#FFD9E5', borderRadius: 4, marginBottom: 12, overflow: 'hidden' }}>
-        <div style={{ width: `${current}%`, height: '100%', background: 'linear-gradient(90deg, #FFD966, #FF6B9D)', transition: 'width 0.3s' }} />
+      <div className={styles['affinity-meta']}>
+        {current < 100
+          ? `再 ${100 - current}% 解锁亲密模式`
+          : '已达到 100%，亲密模式已解锁'}
       </div>
-      <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-        {current < 100 ? `再 ${100 - current}% 解锁亲密模式` : '已达到 100%,亲密模式已解锁'}
-      </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      <div className={styles['affinity-actions']}>
         {[0, 25, 50, 80, 100].map(v => (
           <button
             key={v}
+            className={`${styles['affinity-pill']} ${current === v ? styles.active : ''}`}
             onClick={() => onSet(v)}
             disabled={busy}
-            style={{
-              flex: 1, minWidth: 50, padding: '6px 0',
-              background: current === v ? '#FF6B9D' : 'white',
-              color: current === v ? 'white' : '#FF6B9D',
-              border: '1px solid #FF6B9D', borderRadius: 6,
-              fontSize: 13, fontWeight: current === v ? 'bold' : 'normal',
-              cursor: busy ? 'not-allowed' : 'pointer',
-            }}
-          >{v}</button>
+          >
+            {v}
+          </button>
         ))}
       </div>
-      <p style={{ fontSize: 11, color: '#999', marginTop: 8, marginBottom: 0 }}>
-        默认由每日 2 点的 cron 评估增长;手动调只是临时调整,会被覆盖。
+      <p className={styles['affinity-hint']}>
+        默认由每日 2 点的 cron 评估增长；手动调只是临时调整，会被覆盖。
       </p>
     </div>
   );

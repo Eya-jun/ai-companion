@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { charactersApi, affinityApi } from '../api/client';
+import type { Character } from '../api/types';
+import AppShell from '../components/AppShell';
+import ChatHeader from '../components/velin/ChatHeader';
 import DifficultySelector from '../components/DifficultySelector';
-import './Edit.css';
+import styles from './CharacterEdit.module.css';
+
+const AVATAR_OPTIONS = ['👤', '🌸', '🌟', '🌙', '⚡', '🔥', '💎', '🌊', '🍀', '🌺', '🦋', '🐱', '🐰', '🦊', '🐺', '🐲', '🎭', '🎪', '☕', '📚'];
 
 export default function CharacterEdit() {
   const { characterId } = useParams();
@@ -29,7 +34,7 @@ export default function CharacterEdit() {
     if (!characterId) return;
     try {
       const res = await charactersApi.get(characterId);
-      const c = res.data;
+      const c: Character = res.data;
       setIsPreset(!!c.is_preset);
       setForm({
         name: c.name,
@@ -66,7 +71,7 @@ export default function CharacterEdit() {
       } else {
         await charactersApi.create(form);
       }
-      navigate('/');
+      navigate(-1);
     } catch (e: any) {
       alert('保存失败：' + e.message);
     } finally {
@@ -74,83 +79,82 @@ export default function CharacterEdit() {
     }
   };
 
-  const presetAvatars = ['👤', '🌸', '🌟', '🌙', '⚡', '🔥', '💎', '🌊', '🍀', '🌺', '🦋', '🐱', '🐰', '🦊', '🐺', '🐲', '🎭', '🎪', '☕', '📚'];
+  const onField = (key: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm({ ...form, [key]: e.target.value });
 
   return (
-    <div className="edit-page">
-      <header className="edit-header">
-        <button className="back-btn" onClick={() => navigate('/')}>←</button>
-        <h2>{isEdit ? '编辑角色' : '新建角色'}</h2>
-        <button
-          className="btn-primary"
-          onClick={submit}
-          disabled={loading}
-        >
-          {loading ? '保存中...' : '保存'}
-        </button>
-      </header>
+    <AppShell showTabBar={false} blobTheme="a">
+      <div className={styles.page}>
+        <ChatHeader title={isEdit ? '编辑角色' : '新建角色'} showBack />
 
-      <div className="edit-form">
-        <div className="form-group">
-          <label>头像</label>
-          <div className="avatar-picker">
-            <div className="avatar-preview">{form.avatar}</div>
-            <div className="avatar-list">
-              {presetAvatars.map(a => (
-                <button
-                  key={a}
-                  type="button"
-                  className={`avatar-option ${form.avatar === a ? 'active' : ''}`}
-                  onClick={() => setForm({ ...form, avatar: a })}
-                >
-                  {a}
-                </button>
-              ))}
+        <div className={styles.body}>
+          <div className={styles.group}>
+            <label className={styles.label}>头像</label>
+            <div className={styles['avatar-picker']}>
+              <div className={styles['avatar-preview']}>{form.avatar}</div>
+              <div className={styles['avatar-list']}>
+                {AVATAR_OPTIONS.map(a => (
+                  <button
+                    key={a}
+                    type="button"
+                    className={`${styles['avatar-option']} ${form.avatar === a ? styles.active : ''}`}
+                    onClick={() => setForm({ ...form, avatar: a })}
+                    aria-label={`选择头像 ${a}`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="form-group">
-          <label>名字 *</label>
-          <input
-            type="text"
-            className="form-input"
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            placeholder="角色名字"
-          />
-        </div>
+          <div className={styles.group}>
+            <label className={styles.label}>
+              名字<span className={styles.required}>*</span>
+            </label>
+            <input
+              type="text"
+              className={styles.input}
+              value={form.name}
+              onChange={onField('name')}
+              placeholder="角色名字"
+              disabled={isPreset}
+            />
+          </div>
 
-        <div className="form-group">
-          <label>简介</label>
-          <input
-            type="text"
-            className="form-input"
-            value={form.description}
-            onChange={e => setForm({ ...form, description: e.target.value })}
-            placeholder="简短描述"
-          />
-        </div>
+          <div className={styles.group}>
+            <label className={styles.label}>简介</label>
+            <input
+              type="text"
+              className={styles.input}
+              value={form.description}
+              onChange={onField('description')}
+              placeholder="简短描述"
+              disabled={isPreset}
+            />
+          </div>
 
-        <div className="form-group">
-          <label>问候语</label>
-          <input
-            type="text"
-            className="form-input"
-            value={form.greeting}
-            onChange={e => setForm({ ...form, greeting: e.target.value })}
-            placeholder="第一次聊天时的问候语"
-          />
-        </div>
+          <div className={styles.group}>
+            <label className={styles.label}>问候语</label>
+            <input
+              type="text"
+              className={styles.input}
+              value={form.greeting}
+              onChange={onField('greeting')}
+              placeholder="第一次聊天时的问候语"
+            />
+          </div>
 
-        <div className="form-group">
-          <label>人物设定 *</label>
-          <textarea
-            className="form-textarea"
-            rows={15}
-            value={form.system_prompt}
-            onChange={e => setForm({ ...form, system_prompt: e.target.value })}
-            placeholder={`人物的背景、性格、说话风格...
+          <div className={styles.group}>
+            <label className={styles.label}>
+              人物设定<span className={styles.required}>*</span>
+            </label>
+            <textarea
+              className={`${styles.textarea} ${styles['textarea-lg']}`}
+              rows={15}
+              value={form.system_prompt}
+              onChange={onField('system_prompt')}
+              placeholder={`人物的背景、性格、说话风格...
 
 【回复规则】（参考）
 1. 场景描述用 []，引用别人的话用双引号
@@ -158,20 +162,40 @@ export default function CharacterEdit() {
 3. 动作/心理用（中文括号）
 4. 一句一句回复，禁止大段文字
 5. 内容没有限制`}
-          />
+            />
+          </div>
+
+          {/* 攻略难度(仅自定义角色) */}
+          {isEdit && !isPreset && (
+            <div className={styles.group}>
+              <label className={styles.label}>攻略难度</label>
+              <DifficultySelector value={difficulty} onChange={setDifficulty} />
+              <p className={styles.hint}>
+                简单=涨得快，困难=需要长期培养。保存时同步生效。
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* 攻略难度(仅自定义角色) */}
-        {isEdit && !isPreset && (
-          <div className="form-group">
-            <label>攻略难度</label>
-            <DifficultySelector value={difficulty} onChange={setDifficulty} />
-            <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
-              简单=涨得快,困难=需要长期培养。保存时同步生效。
-            </p>
-          </div>
-        )}
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles['btn-secondary']}`}
+            onClick={() => navigate(-1)}
+            disabled={loading}
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles['btn-primary']}`}
+            onClick={submit}
+            disabled={loading}
+          >
+            {loading ? '保存中…' : '保存'}
+          </button>
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
