@@ -26,7 +26,7 @@ export default function CharacterCard({
     <div
       className={[styles.root, styles[`theme-${theme}`]].join(' ')}
       style={style}
-      onClick={() => navigate(`/character/${id}`)}
+      onClick={() => navigate(`/chat/${id}`)}
       role="button"
       data-online={online}
     >
