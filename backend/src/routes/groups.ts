@@ -505,7 +505,6 @@ router.post('/:id/trigger', async (req, res) => {
           contextMessages,
           model as LLMProvider
         );
-        console.log(`[group ${id}] round ${r}, char=${char.name}, response length=${charResponse?.length || 0}, preview=${(charResponse || '').slice(0, 100)}`);
 
         const { data: aiMessage } = await supabase
           .from('messages')
