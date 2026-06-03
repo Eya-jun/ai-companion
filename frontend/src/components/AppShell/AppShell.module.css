@@ -1,0 +1,61 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  position: relative;
+  background: var(--canvas);
+  overflow: hidden;
+}
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.scroll-no-tab {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: var(--canvas);
+  overflow: hidden;
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  will-change: transform;
+}
+.blob-a {
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, var(--a-1) 0%, transparent 70%);
+  top: -120px; left: -80px;
+  animation: bob-a 16s var(--ease) infinite;
+}
+.blob-b {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, var(--c-1) 0%, transparent 70%);
+  bottom: -100px; right: -80px;
+  animation: bob-b 18s var(--ease) infinite;
+}
+@keyframes bob-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(40px, 30px) scale(1.08); }
+}
+@keyframes bob-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-30px, -40px) scale(1.06); }
+}
+.content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
