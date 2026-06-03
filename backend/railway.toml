@@ -1,6 +1,7 @@
-# Railway Railpack 配置(用新 build 系统,不要 nixpacks)
+# Railway Railpack 配置(用新 build 系统)
 [build]
 builder = "RAILPACK"
+rootDirectory = "backend"
 buildCommand = "npm install && npm run build"
 
 [deploy]
@@ -9,3 +10,4 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+
