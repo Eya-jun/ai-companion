@@ -70,7 +70,7 @@ export default function CharacterDetail() {
 
         <div className={styles.hero} data-theme={theme}>
           <div className={styles['hero-content']}>
-            <Avatar theme={theme} label={character.name.charAt(0)} size="xl" />
+            <Avatar theme={theme} label={character.name.charAt(0)} imageUrl={character.avatar} size="xl" />
             <div className={styles['hero-name']}>{character.name}</div>
             <div className={styles['hero-tag']}>{character.description || '角色'}</div>
           </div>

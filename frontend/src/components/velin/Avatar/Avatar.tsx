@@ -4,9 +4,12 @@ import styles from './Avatar.module.css';
 type Size = 'sm' | 'md' | 'lg' | 'xl';
 type Theme = 'a' | 'b' | 'c' | 'd' | 'user';
 
+const isUrl = (s: string): boolean => /^https?:\/\//.test(s) || s.startsWith('data:');
+
 interface AvatarProps {
   theme: Theme;
-  label: string;            // 1–2 chars (Chinese first character or "我")
+  label: string;            // 1–2 chars (Chinese first character or "我") — fallback when no imageUrl
+  imageUrl?: string;        // if provided and looks like a URL, renders <img> instead of the label
   size?: Size;
   showRing?: boolean;       // default true; false for inline use
   style?: CSSProperties;
@@ -17,6 +20,7 @@ interface AvatarProps {
 export default function Avatar({
   theme,
   label,
+  imageUrl,
   size = 'md',
   showRing = true,
   style,
@@ -30,6 +34,7 @@ export default function Avatar({
     xl: styles['size-xl'],
   }[size];
   const themeClass = styles[`theme-${theme}`];
+  const hasImage = !!(imageUrl && isUrl(imageUrl));
 
   return (
     <div
@@ -40,7 +45,11 @@ export default function Avatar({
       aria-label={ariaLabel}
     >
       {showRing && <span className={styles.ring} aria-hidden="true" />}
-      <span className={styles.label}>{label}</span>
+      {hasImage ? (
+        <img className={styles.img} src={imageUrl} alt={ariaLabel || label} />
+      ) : (
+        <span className={styles.label}>{label}</span>
+      )}
     </div>
   );
 }

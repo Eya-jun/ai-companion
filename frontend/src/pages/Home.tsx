@@ -108,6 +108,7 @@ export default function Home() {
                   key={c.id}
                   id={c.id}
                   name={c.name}
+                  imageUrl={c.avatar}
                   tagline={undefined}
                   preview={(c as any).last_message || '开始一段对话'}
                   time={timeAgo((c as any).last_message_at)}

@@ -7,6 +7,7 @@ import { type ThemeKey, themeFor } from '../../../theme/characterThemes';
 interface CharacterCardProps {
   id: string;
   name: string;
+  imageUrl?: string;
   tagline?: string;
   preview: string;
   time: string;
@@ -16,7 +17,7 @@ interface CharacterCardProps {
 }
 
 export default function CharacterCard({
-  id, name, tagline, preview, time, unread = 0, online = false, style,
+  id, name, imageUrl, tagline, preview, time, unread = 0, online = false, style,
 }: CharacterCardProps) {
   const navigate = useNavigate();
   const theme: ThemeKey = themeFor(name);
@@ -38,6 +39,7 @@ export default function CharacterCard({
       <Avatar
         theme={theme}
         label={firstChar}
+        imageUrl={imageUrl}
         size="lg"
         onClick={handleAvatarClick}
         ariaLabel={`查看 ${name} 资料卡`}

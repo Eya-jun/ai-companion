@@ -166,7 +166,7 @@ export default function Chat() {
                   isMe ? (
                     <Avatar theme="user" label="我" size="sm" />
                   ) : (
-                    <Avatar theme={theme} label={userFirstChar} size="sm" />
+                    <Avatar theme={theme} label={userFirstChar} imageUrl={character.avatar} size="sm" />
                   )
                 }
                 stamp={
