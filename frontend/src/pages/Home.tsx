@@ -53,7 +53,7 @@ export default function Home() {
   void extrasCount;
 
   const total = characters.length;
-  const unread = characters.filter(c => (c as any).unread_count > 0).length;
+  const unread = characters.filter(c => (c.unread_count ?? 0) > 0).length;
 
   return (
     <AppShell blobTheme="a">
@@ -98,7 +98,7 @@ export default function Home() {
             <div className={styles.empty}>还没有角色,点 + 新建一个</div>
           ) : (
             characters
-              .filter(c => filter === 'unread' ? (c as any).unread_count > 0 : true)
+              .filter(c => filter === 'unread' ? (c.unread_count ?? 0) > 0 : true)
               .map(c => (
                 <CharacterCard
                   key={c.id}
@@ -106,10 +106,10 @@ export default function Home() {
                   name={c.name}
                   imageUrl={c.avatar}
                   tagline={undefined}
-                  preview={(c as any).last_message || '开始一段对话'}
-                  time={timeAgo((c as any).last_message_at)}
-                  unread={(c as any).unread_count || 0}
-                  online={!!(c as any).online}
+                  preview={c.last_message || '开始一段对话'}
+                  time={timeAgo(c.last_message_at ?? undefined)}
+                  unread={c.unread_count ?? 0}
+                  online={!!c.online}
                 />
               ))
           )}

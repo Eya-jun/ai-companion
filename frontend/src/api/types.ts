@@ -12,6 +12,11 @@ export interface Character {
   greeting: string;
   created_at?: string;
   updated_at?: string;
+  // Enriched fields from GET /characters
+  last_message?: string | null;
+  last_message_at?: string | null;
+  unread_count?: number;
+  online?: boolean;
 }
 
 export interface Message {
