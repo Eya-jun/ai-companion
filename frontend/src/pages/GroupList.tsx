@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { groupsApi } from '../api/client';
 import type { Group } from '../api/types';
 import AppShell from '../components/AppShell';
+import Avatar from '../components/velin/Avatar';
 import styles from './GroupList.module.css';
 
 // Mirror the character theme scheme so the visual key matches.
@@ -92,6 +93,7 @@ export default function GroupList() {
             groups.map(g => {
               const count = memberCount(g);
               const theme = themeFor(g.id);
+              const firstMember = g.members?.[0]?.characters;
               return (
                 <button
                   key={g.id}
@@ -99,7 +101,13 @@ export default function GroupList() {
                   onClick={() => { window.location.hash = `#/group/${g.id}`; }}
                   aria-label={`打开群聊 ${g.name}`}
                 >
-                  <div className={styles['card-avatar']}>{initial(g.name)}</div>
+                  <Avatar
+                    theme={theme}
+                    label={initial(g.name)}
+                    imageUrl={firstMember?.avatar}
+                    size="lg"
+                    style={{ width: 52, height: 52, fontSize: 17 }}
+                  />
                   <div className={styles['card-meta']}>
                     <div className={styles['card-top']}>
                       <div className={styles['card-name']}>{g.name}</div>

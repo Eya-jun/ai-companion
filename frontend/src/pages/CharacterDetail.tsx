@@ -66,7 +66,7 @@ export default function CharacterDetail() {
   return (
     <AppShell showTabBar={false} blobTheme={theme}>
       <div className={styles.page}>
-        <ChatHeader title={character.name} subtitle="在线 · 刚刚" live showBack />
+        <ChatHeader title={character.name} subtitle="在线 · 刚刚" live showBack onBack={() => navigate('/')} />
 
         <div className={styles.hero} data-theme={theme}>
           <div className={styles['hero-content']}>

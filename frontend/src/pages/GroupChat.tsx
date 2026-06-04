@@ -123,6 +123,7 @@ export default function GroupChat() {
       key={m.id}
       theme={themeFor(m.name)}
       label={m.name.charAt(0)}
+      imageUrl={m.avatar}
       size="sm"
       style={{ width: 28, height: 28, fontSize: 10, boxShadow: '0 0 0 2px var(--canvas)' }}
     />
@@ -211,7 +212,7 @@ export default function GroupChat() {
                   isMe ? (
                     <Avatar theme="user" label="我" size="sm" />
                   ) : (
-                    <Avatar theme={themeKey} label={speakerName.charAt(0)} size="sm" />
+                    <Avatar theme={themeKey} label={speakerName.charAt(0)} imageUrl={speaker?.avatar} size="sm" />
                   )
                 }
                 stamp={new Date(m.created_at).toLocaleTimeString('zh-CN', {
