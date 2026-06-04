@@ -79,11 +79,12 @@ export default function GroupChat() {
       const res = await groupsApi.sendMessage(groupId, userText, model, triggerAll);
       setMessages(prev => {
         const filtered = prev.filter(m => m.id !== tempUserMsg.id);
-        return [
-          ...filtered,
-          ...(res.data.userMessage ? [res.data.userMessage] : []),
-          ...res.data.responses.filter((m: Message | null): m is Message => m != null),
-        ];
+        // 防御:服务端没回 userMessage(insert 失败 / 字段缺失)时,保留乐观插入的 temp
+        const finalUserMsg: Message = res.data.userMessage ?? tempUserMsg;
+        const aiResponses = (res.data.responses || []).filter(
+          (m: Message | null): m is Message => m != null
+        );
+        return [...filtered, finalUserMsg, ...aiResponses];
       });
     } catch (e: any) {
       // 失败时移除临时用户消息并提示
