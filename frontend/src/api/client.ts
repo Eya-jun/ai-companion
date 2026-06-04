@@ -291,6 +291,25 @@ export const profileApi = {
   },
 };
 
+// ========== Avatars (角色头像) ==========
+export const avatarsApi = {
+  uploadCharacterAvatar: async (characterId: string, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const headers = authHeaders();
+    const res = await fetch(`${API_BASE}/avatars/upload/${characterId}`, {
+      method: 'POST',
+      body: fd,
+      headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || '上传失败');
+    }
+    return res.json() as Promise<{ success: boolean; data: { url: string; character: Character } }>;
+  },
+};
+
 // ========== Affinity (好感度) ==========
 export const affinityApi = {
   get: (characterId: string) =>

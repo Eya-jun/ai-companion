@@ -1,16 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { profileApi } from '../api/client';
+import AppShell from '../components/AppShell';
+import ChatHeader from '../components/velin/ChatHeader';
+import styles from './UserProfile.module.css';
 
 export default function UserProfile() {
   const { profile, updateProfile, refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     display_name: '', preferred_name: '', gender: '', age: '',
     occupation: '', mbti: '', bio: '',
   });
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; tone: 'ok' | 'err' } | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -26,7 +32,7 @@ export default function UserProfile() {
     }
   }, [profile]);
 
-  if (!profile) return <div style={{ padding: 40 }}>加载中...</div>;
+  if (!profile) return <div className={styles.loading}>加载中...</div>;
 
   const handleSave = async () => {
     setSaving(true);
@@ -41,9 +47,10 @@ export default function UserProfile() {
         mbti: form.mbti || null,
         bio: form.bio || null,
       });
-      setMsg('已保存');
+      setMsg({ text: '已保存', tone: 'ok' });
+      setTimeout(() => navigate(-1), 600);
     } catch (e: any) {
-      setMsg('保存失败: ' + e.message);
+      setMsg({ text: '保存失败: ' + e.message, tone: 'err' });
     } finally {
       setSaving(false);
     }
@@ -51,56 +58,159 @@ export default function UserProfile() {
 
   const handleAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (e.target) e.target.value = '';
     if (!file) return;
+    setUploading(true);
+    setMsg(null);
     try {
       await profileApi.uploadAvatar(file);
       await refreshProfile();
-      setMsg('头像已更新');
+      setMsg({ text: '头像已更新', tone: 'ok' });
     } catch (e: any) {
-      setMsg('上传失败: ' + e.message);
+      setMsg({ text: '上传失败: ' + e.message, tone: 'err' });
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '40px auto', padding: 24 }}>
-      <h2>我的用户卡</h2>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-        {profile.avatar_url ? (
-          <img src={profile.avatar_url} alt="" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} />
-        ) : (
-          <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#999' }}>?</div>
-        )}
-        <input type="file" ref={fileRef} accept="image/*" onChange={handleAvatar} style={{ display: 'none' }} />
-        <button onClick={() => fileRef.current?.click()}>更换头像</button>
+    <AppShell showTabBar={false} blobTheme="user">
+      <div className={styles.page}>
+        <ChatHeader
+          title="我的资料"
+          subtitle={profile.display_name || ''}
+          showBack
+        />
+
+        <div className={styles.body}>
+          {/* 头像卡 */}
+          <div className={styles['avatar-card']}>
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt="头像" className={styles['avatar-img']} />
+            ) : (
+              <div className={styles['avatar-placeholder']}>?</div>
+            )}
+            <div className={styles['avatar-info']}>
+              <div className={styles['avatar-name']}>{profile.display_name || '未设置昵称'}</div>
+              <div className={styles['avatar-hint']}>支持 jpg / png / webp · 最大 2MB</div>
+              <button
+                type="button"
+                className={styles['avatar-change']}
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? '上传中…' : '更换'}
+              </button>
+              <input
+                type="file"
+                ref={fileRef}
+                accept="image/*"
+                onChange={handleAvatar}
+                style={{ display: 'none' }}
+              />
+            </div>
+          </div>
+
+          <div className={styles.group}>
+            <label className={styles.label}>昵称</label>
+            <input
+              className={styles.input}
+              value={form.display_name}
+              onChange={e => setForm({ ...form, display_name: e.target.value })}
+              placeholder="对外展示的名字"
+            />
+          </div>
+
+          <div className={styles.group}>
+            <label className={styles.label}>称呼（让 AI 怎么叫你）</label>
+            <input
+              className={styles.input}
+              value={form.preferred_name}
+              onChange={e => setForm({ ...form, preferred_name: e.target.value })}
+              placeholder="如：小美 / 阿月"
+            />
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.group}>
+              <label className={styles.label}>性别</label>
+              <input
+                className={styles.input}
+                value={form.gender}
+                onChange={e => setForm({ ...form, gender: e.target.value })}
+                placeholder="男 / 女 / 其他"
+              />
+            </div>
+            <div className={styles.group}>
+              <label className={styles.label}>年龄</label>
+              <input
+                className={styles.input}
+                value={form.age}
+                onChange={e => setForm({ ...form, age: e.target.value })}
+                placeholder="数字"
+                inputMode="numeric"
+              />
+            </div>
+          </div>
+
+          <div className={styles.group}>
+            <label className={styles.label}>身份（学生 / 上班族 / …）</label>
+            <input
+              className={styles.input}
+              value={form.occupation}
+              onChange={e => setForm({ ...form, occupation: e.target.value })}
+              placeholder="职业 / 角色"
+            />
+          </div>
+
+          <div className={styles.group}>
+            <label className={styles.label}>MBTI</label>
+            <input
+              className={styles.input}
+              value={form.mbti}
+              onChange={e => setForm({ ...form, mbti: e.target.value.toUpperCase() })}
+              placeholder="如：INFP"
+              maxLength={4}
+            />
+          </div>
+
+          <div className={styles.group}>
+            <label className={styles.label}>自我介绍</label>
+            <textarea
+              className={`${styles.textarea}`}
+              rows={4}
+              value={form.bio}
+              onChange={e => setForm({ ...form, bio: e.target.value })}
+              placeholder="一句话介绍一下自己"
+            />
+          </div>
+
+          {msg && (
+            <div className={`${styles.msg} ${msg.tone === 'err' ? styles['msg-err'] : styles['msg-ok']}`}>
+              {msg.text}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles['btn-secondary']}`}
+            onClick={() => navigate(-1)}
+            disabled={saving}
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles['btn-primary']}`}
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? '保存中…' : '保存'}
+          </button>
+        </div>
       </div>
-
-      <Field label="昵称" value={form.display_name} onChange={v => setForm({ ...form, display_name: v })} />
-      <Field label="称呼(让 AI 怎么叫你)" value={form.preferred_name} onChange={v => setForm({ ...form, preferred_name: v })} placeholder="如:小美 / 阿月" />
-      <Field label="性别" value={form.gender} onChange={v => setForm({ ...form, gender: v })} />
-      <Field label="年龄" value={form.age} onChange={v => setForm({ ...form, age: v })} />
-      <Field label="身份(学生/上班族/...)" value={form.occupation} onChange={v => setForm({ ...form, occupation: v })} />
-      <Field label="MBTI" value={form.mbti} onChange={v => setForm({ ...form, mbti: v })} />
-
-      <div style={{ marginBottom: 12 }}>
-        <label>自我介绍<br />
-          <textarea value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} rows={4} style={{ width: '100%', padding: 8 }} />
-        </label>
-      </div>
-
-      <button onClick={handleSave} disabled={saving} style={{ padding: '8px 20px' }}>
-        {saving ? '保存中...' : '保存'}
-      </button>
-      {msg && <span style={{ marginLeft: 12 }}>{msg}</span>}
-    </div>
-  );
-}
-
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <label>{label}<br />
-        <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ width: '100%', padding: 8 }} />
-      </label>
-    </div>
+    </AppShell>
   );
 }

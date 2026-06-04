@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, MouseEvent } from 'react';
 import styles from './Avatar.module.css';
 
 type Size = 'sm' | 'md' | 'lg' | 'xl';
@@ -10,7 +10,7 @@ interface AvatarProps {
   size?: Size;
   showRing?: boolean;       // default true; false for inline use
   style?: CSSProperties;
-  onClick?: () => void;
+  onClick?: (e: MouseEvent) => void;
   ariaLabel?: string;
 }
 

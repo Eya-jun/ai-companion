@@ -1,6 +1,6 @@
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { charactersApi, affinityApi } from '../api/client';
+import { charactersApi, affinityApi, avatarsApi } from '../api/client';
 import type { Character } from '../api/types';
 import AppShell from '../components/AppShell';
 import ChatHeader from '../components/velin/ChatHeader';
@@ -8,11 +8,13 @@ import DifficultySelector from '../components/DifficultySelector';
 import styles from './CharacterEdit.module.css';
 
 const AVATAR_OPTIONS = ['👤', '🌸', '🌟', '🌙', '⚡', '🔥', '💎', '🌊', '🍀', '🌺', '🦋', '🐱', '🐰', '🦊', '🐺', '🐲', '🎭', '🎪', '☕', '📚'];
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 export default function CharacterEdit() {
   const { characterId } = useParams();
   const navigate = useNavigate();
   const isEdit = !!characterId;
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [isPreset, setIsPreset] = useState(false);
   const [form, setForm] = useState({
@@ -22,6 +24,8 @@ export default function CharacterEdit() {
     system_prompt: '',
     greeting: '你好。',
   });
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [difficulty, setDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
 
   useEffect(() => {
@@ -62,6 +66,7 @@ export default function CharacterEdit() {
     }
     setLoading(true);
     try {
+      let targetId = characterId;
       if (isEdit && characterId) {
         await charactersApi.update(characterId, form);
         // 自定义角色同步保存 difficulty
@@ -69,7 +74,18 @@ export default function CharacterEdit() {
           try { await affinityApi.setDifficulty(characterId, difficulty); } catch { /* ignore */ }
         }
       } else {
-        await charactersApi.create(form);
+        const created = await charactersApi.create(form);
+        targetId = created.data.id;
+      }
+      // 头像有挂起的本地文件才上传
+      if (pendingAvatarFile && targetId) {
+        try {
+          const res = await avatarsApi.uploadCharacterAvatar(targetId, pendingAvatarFile);
+          // 用返回的新 URL 覆盖(后端会更新数据库,前端 form 也保持一致)
+          setForm((f) => ({ ...f, avatar: res.data.url }));
+        } catch (e: any) {
+          alert('头像上传失败: ' + e.message);
+        }
       }
       navigate(-1);
     } catch (e: any) {
@@ -82,6 +98,31 @@ export default function CharacterEdit() {
   const onField = (key: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [key]: e.target.value });
 
+  const isImageAvatar = (s: string) => s.startsWith('data:image') || /^https?:\/\//.test(s);
+
+  const handleFilePicked = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 重置 input value,允许同一文件再次选择
+    if (e.target) e.target.value = '';
+    if (!file) return;
+    if (file.size > MAX_AVATAR_BYTES) {
+      alert('文件超过 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setForm((f) => ({ ...f, avatar: dataUrl }));
+      setPendingAvatarFile(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEmojiPick = (emoji: string) => {
+    setForm({ ...form, avatar: emoji });
+    setPendingAvatarFile(null);
+  };
+
   return (
     <AppShell showTabBar={false} blobTheme="a">
       <div className={styles.page}>
@@ -91,20 +132,53 @@ export default function CharacterEdit() {
           <div className={styles.group}>
             <label className={styles.label}>头像</label>
             <div className={styles['avatar-picker']}>
-              <div className={styles['avatar-preview']}>{form.avatar}</div>
-              <div className={styles['avatar-list']}>
-                {AVATAR_OPTIONS.map(a => (
-                  <button
-                    key={a}
-                    type="button"
-                    className={`${styles['avatar-option']} ${form.avatar === a ? styles.active : ''}`}
-                    onClick={() => setForm({ ...form, avatar: a })}
-                    aria-label={`选择头像 ${a}`}
-                  >
-                    {a}
-                  </button>
-                ))}
+              <div className={styles['avatar-preview']}>
+                {isImageAvatar(form.avatar) ? (
+                  <img src={form.avatar} alt="头像预览" className={styles['avatar-preview-img']} />
+                ) : (
+                  <span className={styles['avatar-preview-emoji']}>{form.avatar}</span>
+                )}
               </div>
+
+              <div className={styles['avatar-actions']}>
+                <button
+                  type="button"
+                  className={`${styles['avatar-action-btn']} ${showEmojiPicker ? styles.active : ''}`}
+                  onClick={() => setShowEmojiPicker((s) => !s)}
+                >
+                  {showEmojiPicker ? '收起表情' : '从表情中选择'}
+                </button>
+                <button
+                  type="button"
+                  className={styles['avatar-action-btn']}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  上传本地图片
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  ref={fileInputRef}
+                  onChange={handleFilePicked}
+                />
+              </div>
+
+              {showEmojiPicker && (
+                <div className={styles['avatar-list']}>
+                  {AVATAR_OPTIONS.map(a => (
+                    <button
+                      key={a}
+                      type="button"
+                      className={`${styles['avatar-option']} ${form.avatar === a ? styles.active : ''}`}
+                      onClick={() => handleEmojiPick(a)}
+                      aria-label={`选择头像 ${a}`}
+                    >
+                      {a}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

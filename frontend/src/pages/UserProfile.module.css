@@ -1,4 +1,4 @@
-/* Vélin · CharacterEdit — form page */
+/* Vélin · UserProfile — 我的资料 */
 
 .page {
   height: 100%;
@@ -6,6 +6,15 @@
   flex-direction: column;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-mute);
+  font-size: var(--t-body);
 }
 
 .body {
@@ -16,10 +25,102 @@
   padding: var(--s-5) var(--s-4) calc(var(--s-9) + env(safe-area-inset-bottom, 0));
 }
 
+/* ===== Avatar card ===== */
+
+.avatar-card {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+}
+
+.avatar-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--hair-2);
+  box-shadow: 0 0 0 4px var(--glass-1);
+}
+
+.avatar-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--glass-2);
+  border: 1px solid var(--hair-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.avatar-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.avatar-name {
+  font-size: var(--t-headline);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar-hint {
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  letter-spacing: var(--track-loose);
+}
+
+.avatar-change {
+  align-self: flex-start;
+  margin-top: 4px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--glass-2);
+  border: 1px solid var(--hair-2);
+  color: var(--text);
+  font-size: var(--t-caption);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease);
+}
+
+.avatar-change:hover:not(:disabled) {
+  background: var(--glass-3);
+}
+
+.avatar-change:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Form fields ===== */
+
 .group {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
 }
 
 .label {
@@ -30,11 +131,6 @@
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
   padding: 0 2px;
-}
-
-.required {
-  color: var(--text);
-  margin-left: 2px;
 }
 
 .input,
@@ -64,137 +160,34 @@
   background: var(--glass-2);
 }
 
-.input:disabled,
-.textarea:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .textarea {
   resize: vertical;
   line-height: 1.6;
-  min-height: 120px;
+  min-height: 96px;
 }
 
-.textarea-lg {
-  min-height: 280px;
-}
+/* ===== Inline message ===== */
 
-.hint {
-  font-size: var(--t-caption);
-  color: var(--text-dim);
-  line-height: 1.5;
-  padding: 0 2px;
-}
-
-/* ===== Avatar picker ===== */
-
-.avatar-picker {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  padding: var(--s-4);
-  background: var(--glass-1);
-  border: 1px solid var(--hair);
-  border-radius: var(--r-lg);
-}
-
-.avatar-preview {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 44px;
-  background: var(--glass-2);
-  border: 1px solid var(--hair-2);
-  box-shadow: 0 0 0 4px var(--glass-1);
-  overflow: hidden;
-}
-
-.avatar-preview-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.avatar-preview-emoji {
-  line-height: 1;
-}
-
-.avatar-actions {
-  display: flex;
-  gap: var(--s-2);
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.avatar-action-btn {
-  height: 32px;
-  padding: 0 14px;
-  border-radius: var(--r-pill);
-  background: var(--glass-1);
-  border: 1px solid var(--hair);
-  color: var(--text);
-  font-size: var(--t-caption);
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--dur-base) var(--ease);
-}
-
-.avatar-action-btn:hover {
-  background: var(--glass-2);
-  border-color: var(--hair-2);
-}
-
-.avatar-action-btn.active {
-  background: var(--glass-3);
-  border-color: var(--text-mute);
-}
-
-.avatar-list {
-  display: flex;
-  gap: var(--s-2);
-  overflow-x: auto;
-  padding: 4px 2px 8px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.avatar-list::-webkit-scrollbar {
-  display: none;
-}
-
-.avatar-option {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+.msg {
+  padding: 10px 14px;
   border-radius: var(--r-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  background: var(--glass-1);
+  font-size: var(--t-caption);
   border: 1px solid var(--hair);
-  cursor: pointer;
-  transition: all var(--dur-base) var(--ease);
+  background: var(--glass-1);
 }
 
-.avatar-option:hover {
-  background: var(--glass-2);
+.msg-ok {
+  color: var(--text);
   border-color: var(--hair-2);
 }
 
-.avatar-option.active {
-  background: var(--glass-3);
-  border-color: var(--text-mute);
-  box-shadow: 0 0 0 1px var(--text-mute) inset;
+.msg-err {
+  color: #ff8a8a;
+  border-color: rgba(255, 138, 138, 0.4);
+  background: rgba(255, 138, 138, 0.08);
 }
 
-/* ===== Bottom action bar ===== */
+/* ===== Sticky actions ===== */
 
 .actions {
   position: sticky;

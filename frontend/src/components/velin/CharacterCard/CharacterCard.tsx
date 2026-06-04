@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../Avatar';
 import styles from './CharacterCard.module.css';
@@ -22,6 +22,11 @@ export default function CharacterCard({
   const theme: ThemeKey = themeFor(name);
   const firstChar = name.charAt(0);
 
+  const handleAvatarClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/character/${id}`);
+  };
+
   return (
     <div
       className={[styles.root, styles[`theme-${theme}`]].join(' ')}
@@ -30,7 +35,13 @@ export default function CharacterCard({
       role="button"
       data-online={online}
     >
-      <Avatar theme={theme} label={firstChar} size="lg" />
+      <Avatar
+        theme={theme}
+        label={firstChar}
+        size="lg"
+        onClick={handleAvatarClick}
+        ariaLabel={`查看 ${name} 资料卡`}
+      />
       <div className={styles.meta}>
         <div className={styles.top}>
           <span className={styles.name}>{name}</span>
