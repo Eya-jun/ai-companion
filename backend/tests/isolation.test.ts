@@ -23,6 +23,8 @@ const mockFrom = (table: string) => {
       orCalls.push(expr);
       return query;
     }),
+    is: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     single: vi.fn().mockImplementation(() => {
       // 模拟 characters 单条查询
