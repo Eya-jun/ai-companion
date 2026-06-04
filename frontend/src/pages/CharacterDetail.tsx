@@ -8,6 +8,7 @@ import Avatar from '../components/velin/Avatar';
 import StatRing from '../components/velin/StatRing';
 import StatCount from '../components/velin/StatCount';
 import MemoryCard from '../components/velin/MemoryCard';
+import { NumberSliderModal, TreasuryManagerModal } from '../components/velin/StatEditor';
 import { themeFor, type ThemeKey } from '../theme/characterThemes';
 import styles from './CharacterDetail.module.css';
 
@@ -29,28 +30,43 @@ export default function CharacterDetail() {
   const [memoryCount, setMemoryCount] = useState(0);
   const [recentMemories, setRecentMemories] = useState<Array<{ date: string; text: string; tag?: string }>>([]);
 
+  // 3 个弹窗状态
+  const [showAffinityEditor, setShowAffinityEditor] = useState(false);
+  const [showIntimacyEditor, setShowIntimacyEditor] = useState(false);
+  const [showTreasuryManager, setShowTreasuryManager] = useState(false);
+
+  const refreshMemories = async () => {
+    try {
+      const m = await memoriesApi.list(characterId);
+      const all = m.data || [];
+      const starred = all.filter((mem: any) => mem.is_starred);
+      setMemoryCount(starred.length);
+      setRecentMemories(starred.slice(0, 3).map((mem: any) => ({
+        date: new Date(mem.memory_date).toLocaleDateString('zh-CN'),
+        text: mem.summary || mem.content,
+        tag: mem.tag,
+      })));
+    } catch { /* no memories yet */ }
+  };
+
+  const refreshAffinity = async () => {
+    try {
+      const a = await affinityApi.get(characterId);
+      setAffinity(a.data);
+    } catch { /* no affinity yet */ }
+  };
+
   useEffect(() => {
     (async () => {
       try {
         const c = await charactersApi.get(characterId);
         setCharacter(c.data);
-        try {
-          const a = await affinityApi.get(characterId);
-          setAffinity(a.data);
-        } catch { /* no affinity yet */ }
-        try {
-          const m = await memoriesApi.list(characterId);
-          setMemoryCount(m.data.length);
-          setRecentMemories(m.data.slice(0, 3).map((mem: any) => ({
-            date: new Date(mem.created_at).toLocaleDateString('zh-CN'),
-            text: mem.summary || mem.content,
-            tag: mem.tag,
-          })));
-        } catch { /* no memories yet */ }
+        await Promise.all([refreshAffinity(), refreshMemories()]);
       } catch (e) {
         console.error(e);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [characterId]);
 
   if (!character) {
@@ -62,6 +78,11 @@ export default function CharacterDetail() {
   }
 
   const theme: ThemeKey = themeFor(character.name);
+  const currentAffinity = Math.round(affinity?.affinity || 0);
+  // 亲密度: 优先用后端的 intimacy 字段, 没有就 fallback 到 stage 估算
+  const currentIntimacy = affinity?.intimacy !== undefined
+    ? Math.round(affinity.intimacy)
+    : stageToIntimacy(affinity?.stage);
 
   return (
     <AppShell showTabBar={false} blobTheme={theme}>
@@ -82,22 +103,38 @@ export default function CharacterDetail() {
           )}
 
           <div className={styles['stats-row']}>
-            <StatRing theme="a" value={Math.round(affinity?.affinity || 0)} label="好感度" />
-            <StatRing theme="b" value={stageToIntimacy(affinity?.stage)} label="亲密度" />
-            <StatCount theme="d" value={memoryCount} label="珍藏" unit="个故事" />
+            <StatRing
+              theme="a"
+              value={currentAffinity}
+              label="好感度"
+              onClick={() => setShowAffinityEditor(true)}
+            />
+            <StatRing
+              theme="b"
+              value={currentIntimacy}
+              label="亲密度"
+              onClick={() => setShowIntimacyEditor(true)}
+            />
+            <StatCount
+              theme="d"
+              value={memoryCount}
+              label="珍藏"
+              unit="个故事"
+              onClick={() => setShowTreasuryManager(true)}
+            />
           </div>
 
           <div>
             <div className={styles['section-title']}>
-              <h3>关键记忆</h3>
-              <span className={styles.more} onClick={() => navigate(`/character/${characterId}/memories`)}>
-                查看全部 →
+              <h3>珍藏回忆</h3>
+              <span className={styles.more} onClick={() => setShowTreasuryManager(true)}>
+                管理 →
               </span>
             </div>
             <div className={styles.memories}>
               {recentMemories.length === 0 ? (
                 <div className={styles['memories-empty']}>
-                  还没有关键记忆，多聊聊就会有了
+                  点击「珍藏」卡片,把那些想留住的瞬间收进来
                 </div>
               ) : (
                 recentMemories.map((m, i) => (
@@ -123,6 +160,42 @@ export default function CharacterDetail() {
           </button>
         </div>
       </div>
+
+      {/* 好感度编辑 */}
+      <NumberSliderModal
+        open={showAffinityEditor}
+        title="编辑好感度"
+        initial={currentAffinity}
+        hint="好感度代表角色对用户的整体信任与熟悉度。"
+        onCancel={() => setShowAffinityEditor(false)}
+        onSave={async (newValue) => {
+          await affinityApi.set(characterId, { affinity: newValue });
+          await refreshAffinity();
+          setShowAffinityEditor(false);
+        }}
+      />
+
+      {/* 亲密度编辑 */}
+      <NumberSliderModal
+        open={showIntimacyEditor}
+        title="编辑亲密度"
+        initial={currentIntimacy}
+        hint="亲密度代表情感上的贴近与依赖程度。"
+        onCancel={() => setShowIntimacyEditor(false)}
+        onSave={async (newValue) => {
+          await affinityApi.set(characterId, { intimacy: newValue });
+          await refreshAffinity();
+          setShowIntimacyEditor(false);
+        }}
+      />
+
+      {/* 珍藏管理 */}
+      <TreasuryManagerModal
+        open={showTreasuryManager}
+        characterId={characterId}
+        onClose={() => setShowTreasuryManager(false)}
+        onChanged={refreshMemories}
+      />
     </AppShell>
   );
 }

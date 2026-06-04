@@ -65,6 +65,7 @@ export type AffinityStage = 'stranger' | 'familiar' | 'flirtatious' | 'intimate'
 
 export interface AffinityState {
   affinity: number;
+  intimacy: number;
   stage: AffinityStage;
   mode: 'daily' | 'intimate';
   unlockedAt: string | null;

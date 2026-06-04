@@ -52,3 +52,19 @@
   letter-spacing: 0.04em;
   margin-top: 2px;
 }
+
+/* Interactive (有 onClick) */
+.interactive {
+  cursor: pointer;
+  transition: background var(--dur-quick) var(--ease), transform var(--dur-quick) var(--ease);
+}
+.interactive:hover {
+  background: var(--glass-2);
+}
+.interactive:active {
+  transform: scale(0.97);
+}
+.interactive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

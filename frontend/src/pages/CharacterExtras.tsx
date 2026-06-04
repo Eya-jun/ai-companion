@@ -76,7 +76,7 @@ export default function CharacterExtras() {
     if (!characterId || affinityBusy) return;
     setAffinityBusy(true);
     try {
-      const r = await affinityApi.set(characterId, v);
+      const r = await affinityApi.set(characterId, { affinity: v });
       setAffinity(s => s
         ? { ...s, affinity: r.data.affinity, stage: r.data.stage as AffinityState['stage'], unlockedAt: r.data.unlockedAt }
         : s

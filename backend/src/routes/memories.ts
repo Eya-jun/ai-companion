@@ -233,4 +233,70 @@ router.get('/character/:characterId/latest', async (req, res) => {
   }
 });
 
+// 获取某角色所有珍藏记忆(is_starred = true)
+router.get('/character/:characterId/starred', async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const supabase = getSupabaseAdmin();
+    const { characterId } = req.params;
+    const { limit = 50, before } = req.query;
+
+    let query = supabase
+      .from('memories')
+      .select('*')
+      .eq('character_id', characterId)
+      .eq('user_id', userId)
+      .eq('is_starred', true)
+      .order('starred_at', { ascending: false })
+      .limit(parseInt(limit as string, 10));
+
+    if (before) {
+      query = query.lt('starred_at', before);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 切换单条记忆的珍藏状态(不带 starred = toggle)
+router.put('/:id/star', async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const supabase = getSupabaseAdmin();
+    const { id } = req.params;
+    const { starred } = req.body; // boolean, optional — if omitted, toggle current value
+
+    const { data: existing } = await supabase
+      .from('memories')
+      .select('id, user_id, is_starred')
+      .eq('id', id)
+      .single();
+    if (!existing) return res.status(404).json({ success: false, error: '记忆不存在' });
+    if (existing.user_id !== userId) {
+      return res.status(403).json({ success: false, error: '无权修改此记忆' });
+    }
+
+    const currentStarred = existing.is_starred ?? false;
+    const newStarred = starred === undefined ? !currentStarred : !!starred;
+    const { data, error } = await supabase
+      .from('memories')
+      .update({
+        is_starred: newStarred,
+        starred_at: newStarred ? new Date().toISOString() : null,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;
