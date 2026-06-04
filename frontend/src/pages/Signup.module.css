@@ -1,0 +1,165 @@
+/* Vélin · Signup — 注册页 */
+
+.page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-3) var(--s-4) var(--s-7);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3) 0 var(--s-6);
+}
+
+.welcome {
+  font-size: var(--t-title);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-tight);
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: var(--t-callout);
+  color: var(--text-mute);
+  letter-spacing: var(--track-normal);
+  line-height: 1.5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.label {
+  display: block;
+  font-size: var(--t-caption);
+  font-weight: 500;
+  color: var(--text-mute);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  padding: 0 2px;
+}
+
+.hint {
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  letter-spacing: var(--track-loose);
+  padding: 0 2px;
+}
+
+.input {
+  width: 100%;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: var(--t-body);
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--dur-base) var(--ease),
+              background var(--dur-base) var(--ease);
+}
+
+.input::placeholder {
+  color: var(--text-dim);
+}
+
+.input:focus {
+  border-color: var(--text-mute);
+  background: var(--glass-2);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-size: var(--t-caption);
+  color: #ff8a8a;
+  border: 1px solid rgba(255, 138, 138, 0.4);
+  background: rgba(255, 138, 138, 0.08);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding-top: var(--s-3);
+}
+
+.btn {
+  width: 100%;
+  height: 44px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: var(--t-callout);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease);
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--accent) 0%, #c0c0c8 100%);
+  color: var(--canvas);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.foot {
+  margin-top: auto;
+  padding-top: var(--s-6);
+  text-align: center;
+  font-size: var(--t-callout);
+  color: var(--text-mute);
+}
+
+.foot a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 4px;
+  border-bottom: 1px solid var(--hair-2);
+  padding-bottom: 1px;
+  transition: border-color var(--dur-base) var(--ease);
+}
+
+.foot a:hover {
+  border-color: var(--text);
+}
