@@ -1,0 +1,168 @@
+/* Vélin · 尺素 — GroupEdit page */
+
+.page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.header-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  color: var(--text);
+  font-size: var(--t-sub);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease);
+}
+.header-btn:hover:not(:disabled),
+.header-btn:focus-visible:not(:disabled) {
+  background: var(--glass-3);
+  outline: none;
+}
+.header-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.body {
+  flex: 1;
+  padding: var(--s-5) var(--s-4) var(--s-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.label {
+  font-size: var(--t-caption);
+  color: var(--text-mute);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.dim {
+  color: var(--text-dim);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: var(--t-body);
+  transition: border-color var(--dur-base) var(--ease);
+}
+.input:focus {
+  border-color: var(--text-mute);
+  outline: none;
+}
+.input::placeholder {
+  color: var(--text-dim);
+}
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.selector-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition: background var(--dur-quick) var(--ease), border-color var(--dur-quick) var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+.selector-item::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 16px; bottom: 16px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--text-dim);
+  opacity: 0.3;
+  transition: opacity var(--dur-base) var(--ease);
+}
+.selector-item:hover {
+  background: var(--glass-2);
+}
+.selector-item.selected {
+  background: var(--glass-2);
+  border-color: var(--text-mute);
+}
+.selector-item.selected::before {
+  opacity: 1;
+  background: var(--text);
+}
+
+.selector-meta {
+  flex: 1;
+  min-width: 0;
+}
+.selector-name {
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-tight);
+}
+.selector-desc {
+  font-size: var(--t-caption);
+  color: var(--text-mute);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selector-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--hair);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-caption);
+  color: transparent;
+  flex-shrink: 0;
+  transition: all var(--dur-base) var(--ease);
+}
+.selector-item.selected .selector-check {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--canvas);
+}
+
+.empty-hint {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--t-sub);
+  background: var(--glass-1);
+  border: 1px dashed var(--hair);
+  border-radius: var(--r-md);
+}
