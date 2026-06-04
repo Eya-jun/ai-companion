@@ -9,7 +9,6 @@
   align-items: center;
   gap: 6px;
   position: relative;
-  overflow: hidden;
   flex: 1;
 }
 .root::before {
@@ -28,11 +27,23 @@
 .ring {
   width: 56px; height: 56px;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.ring svg { transform: rotate(-90deg); }
-.track { stroke: var(--glass-2); }
+.svg {
+  display: block;
+  overflow: visible;  /* 让 stroke-linecap: round 的端点不被裁剪 */
+}
+.track {
+  fill: none;
+  stroke: var(--glass-2);
+  stroke-width: 4;
+}
 .bar {
+  fill: none;
   stroke: var(--accent);
+  stroke-width: 4;
   stroke-linecap: round;
   filter: drop-shadow(0 0 4px var(--accent));
   transition: stroke-dashoffset var(--dur-slow) var(--ease);

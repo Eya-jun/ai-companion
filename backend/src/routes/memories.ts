@@ -102,15 +102,16 @@ ${conversationText}
       model: model as LLMProvider,
     });
 
-    // 4. 保存到数据库(user_id 加上)
+    // 4. 保存到数据库(user_id 加上) —— 允许多条,纯 insert
     const { data, error } = await supabase
       .from('memories')
-      .upsert({
+      .insert({
         character_id: characterId,
         user_id: userId,
         summary,
         memory_date: targetDate,
-      }, { onConflict: 'character_id,user_id,memory_date' })
+        source: 'ai',
+      })
       .select()
       .single();
 
@@ -143,10 +144,10 @@ router.post('/', async (req, res) => {
 
     const { data, error } = await supabase
       .from('memories')
-      .upsert({
+      .insert({
         user_id: userId, character_id: characterId,
         memory_date: date, summary, source: 'user',
-      }, { onConflict: 'user_id,character_id,memory_date' })
+      })
       .select()
       .single();
     if (error) throw error;

@@ -31,12 +31,19 @@ export default function StatRing({ theme, value, max = 100, label, size = 56, on
       tabIndex={interactive ? 0 : undefined}
     >
       <div className={styles.ring}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle className={styles.track} cx={size / 2} cy={size / 2} r={r}
-                  fill="none" strokeWidth="4" />
-          <circle className={styles.bar} cx={size / 2} cy={size / 2} r={r}
-                  fill="none" strokeWidth="4"
-                  strokeDasharray={C} strokeDashoffset={offset} />
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={styles.svg}>
+          {/* 旋转放到 <g> 上,标准做法(避免 SVG-level transform 与 viewBox 互相干扰) */}
+          <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+            <circle className={styles.track} cx={size / 2} cy={size / 2} r={r} />
+            <circle
+              className={styles.bar}
+              cx={size / 2}
+              cy={size / 2}
+              r={r}
+              strokeDasharray={C}
+              strokeDashoffset={offset}
+            />
+          </g>
         </svg>
         <div className={styles.val}>{value}</div>
       </div>
