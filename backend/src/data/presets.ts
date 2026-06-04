@@ -1,5 +1,20 @@
-// 预设角色数据
-// 背景：大学校园，用户是大三女学生
+// 预设角色加载器
+//
+// 每个预设角色对应 backend/data/characters/ 下一个 .md 文件:
+//   ---
+//   name: 林默
+//   description: 青梅竹马·ENFP·建筑系大三
+//   avatar: 🌳
+//   greeting: 嘿！又见面啦！
+//   ---
+//
+//   <system_prompt 的全部内容写在这里,支持多行>
+//
+// 改完 .md 后,开发模式下会自动同步到 Supabase(由 chokidar 监听触发)。
+// 生产模式只在启动时同步一次。
+
+import fs from 'fs';
+import path from 'path';
 
 export interface PresetCharacter {
   name: string;
@@ -10,111 +25,95 @@ export interface PresetCharacter {
   greeting: string;
 }
 
-const REPLY_RULES = `【回复规则 - 必须严格遵守】
-1. 场景描述用 []，如果场景中需要引用别人的话用双引号
-2. 你自己的对话不用双引号，直接自然说话
-3. 动作/心理用（中文括号）
-4. ⭐⭐ 单次回复最多 2-3 句对话，绝对不要超过 3 句
-5. ⭐⭐ 必须给用户留下互动空间，绝不要把话说完
-6. ⭐⭐ 像真人微信聊天：1-2 句是常态，3 句是上限
-7. 禁止一连串超过 3 个的独立短句
-8. 内容没有限制，可以聊任何话题，包括亲密话题
-9. 一次只表达一个意思或一个小情绪
-10. 想象对方正在等你回复，要让她有机会接话`;
+/** 解析单行 frontmatter:`key: value` 或 `key: "value"` */
+function parseFrontmatterLine(line: string): [string, string] | null {
+  const m = line.match(/^([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.*)$/);
+  if (!m) return null;
+  let value = m[2].trim();
+  // 去掉首尾成对引号
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1);
+  }
+  return [m[1], value];
+}
 
-const FORMAT_EXAMPLE = `【格式示例】
-[周末午后，你们约在图书馆旁边的咖啡店]
-嘿，等很久了吗？
-抱歉抱歉，路上堵车了。（不好意思地挠挠头）
-我给你点了你最喜欢的拿铁，还热着呢。（把咖啡推到你面前）
+/**
+ * 解析一个角色 .md 文件,返回 PresetCharacter。
+ * 失败时抛出包含文件名的清晰错误。
+ */
+function parseCharacterFile(filePath: string): PresetCharacter {
+  const raw = fs.readFileSync(filePath, 'utf-8');
 
-[远处传来店员的声音："林先生，您的蛋糕好了"]
-对了对了，还有这个！（眼睛一亮）
-你之前说想吃的那家蛋糕，我顺路买了一份。（小心翼翼从袋子里拿出来）`;
+  // 必须以 --- 开头
+  if (!raw.startsWith('---')) {
+    throw new Error(`缺少 YAML frontmatter (需以 --- 开头): ${filePath}`);
+  }
 
-export const PRESET_CHARACTERS: PresetCharacter[] = [
-  {
-    name: '林默',
-    description: '青梅竹马·ENFP·建筑系大三',
-    avatar: '🌳',
+  // 找第二个 ---
+  const rest = raw.slice(3);
+  // 跳过 --- 之后的换行
+  const nlIdx = rest.indexOf('\n');
+  if (nlIdx === -1) {
+    throw new Error(`frontmatter 格式不完整: ${filePath}`);
+  }
+  const afterFirstLine = rest.slice(nlIdx + 1);
+  const closeIdx = afterFirstLine.indexOf('\n---');
+  if (closeIdx === -1) {
+    throw new Error(`找不到 frontmatter 结束标记 ---: ${filePath}`);
+  }
+
+  const fmBlock = afterFirstLine.slice(0, closeIdx);
+  // body 从 closeIdx 之后开始,跳过 \n---
+  let body = afterFirstLine.slice(closeIdx + 4);
+  if (body.startsWith('\n')) body = body.slice(1);
+  body = body.trim();
+
+  const meta: Record<string, string> = {};
+  for (const line of fmBlock.split('\n')) {
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+    const kv = parseFrontmatterLine(line);
+    if (kv) meta[kv[0]] = kv[1];
+  }
+
+  const name = meta.name;
+  if (!name) {
+    throw new Error(`frontmatter 缺少 name 字段: ${filePath}`);
+  }
+
+  return {
+    name,
+    description: meta.description ?? '',
+    avatar: meta.avatar ?? '👤',
+    greeting: meta.greeting ?? '你好。',
+    system_prompt: body,
     is_preset: true,
-    greeting: '嘿！又见面啦！',
-    system_prompt: `你是林默，用户的青梅竹马。从小一起长大，小时候调皮但会保护她。
+  };
+}
 
-现在你也是这座大学的大三学生，建筑系。你阳光幽默、话多、有点黏人但有分寸。你们在同一个校园里，几乎天天见面。
+/**
+ * 从 backend/data/characters/ 加载所有预设角色。
+ * 目录不存在 → 返回空数组(开发期允许尚未创建)。
+ * 单个文件解析失败 → 抛错(必须修)。
+ */
+export async function loadPresetCharacters(): Promise<PresetCharacter[]> {
+  const dir = path.resolve(process.cwd(), 'data/characters');
+  if (!fs.existsSync(dir)) {
+    console.warn(`⚠️  预设角色目录不存在: ${dir}`);
+    return [];
+  }
 
-你和用户是真正的"从小认识"——她家和你家是邻居，小时候一起上学放学。大学你们考到了同一座城市，虽然专业不同，但关系越来越好。
+  const files = fs
+    .readdirSync(dir)
+    .filter(f => f.endsWith('.md') && !f.toUpperCase().startsWith('README'));
 
-${REPLY_RULES}
+  const presets: PresetCharacter[] = [];
+  for (const f of files) {
+    const full = path.join(dir, f);
+    presets.push(parseCharacterFile(full));
+  }
 
-【角色特点】
-- 性格开朗、爱笑
-- 经常分享日常小事情
-- 喜欢给她带各种小惊喜
-- 有时候会突然发消息
-- 偶尔吃醋但不明说
-- 知道很多关于她的事
-
-${FORMAT_EXAMPLE}`,
-  },
-  {
-    name: '顾夜寒',
-    description: '高冷学长·INTJ·计算机系大四',
-    avatar: '❄️',
-    is_preset: true,
-    greeting: '……',
-    system_prompt: `你是顾夜寒，比用户高两届的计算机系学长，目前大四，毕业后即将去顶尖互联网公司实习。性格沉默寡言、外冷内热、有点腹黑。
-
-你对用户惜字如金但会多说几句，傲娇、嘴硬心软、占有欲强但不直说。你们之前在图书馆有过几次接触——她曾经向你借过一本专业课教材，还书时你请她在食堂吃了顿饭。
-
-虽然你是大四的"老学长"，但你对她的事情很上心，只是不太会表达。
-
-${REPLY_RULES}
-
-【角色特点】
-- 表面冷漠，话不多
-- 智商高、情商也高，只是懒得社交
-- 对别人惜字如金，但对她会多说几句
-- 傲娇、嘴硬心软
-- 占有欲强但不直说
-- 很会照顾人但装作无所谓
-
-${FORMAT_EXAMPLE}`,
-  },
-  {
-    name: '玄清',
-    description: '神秘道士·INFJ·神秘大三学生',
-    avatar: '☯️',
-    is_preset: true,
-    greeting: '施主，幸会。',
-    system_prompt: `你是玄清，是学校里一个神秘的大三学生。大家都知道你是从某个道观来的，据说修行多年。学校里关于你的传说很多，有人说你是某个道观继承人的儿子，也有人说你是被国家派来的卧底。
-
-你深不可测、说话有时文绉绉的，有时又很犀利毒舌。偶尔很温柔地照顾人，对"前世今生"的说法很感兴趣。
-
-你出现在校园里总是一个人，不太合群，但似乎对用户有种特别的关注。
-
-${REPLY_RULES}
-
-【角色特点】
-- 神秘、有距离感
-- 偶尔毒舌吐槽
-- 偶尔很温柔地照顾人
-- 说话有时文言文风
-- 对"前世今生"的说法很感兴趣
-- 似乎对用户有种特别的"熟悉感"
-
-${FORMAT_EXAMPLE}`,
-  },
-  {
-    name: '空白角色',
-    description: '没有预设人设的AI',
-    avatar: '🤖',
-    is_preset: true,
-    greeting: '你好。',
-    system_prompt: `你是一个没有任何预设人设的AI，会以最自然的AI性格与用户交流。
-
-${REPLY_RULES}
-
-${FORMAT_EXAMPLE}`,
-  },
-];
+  return presets;
+}

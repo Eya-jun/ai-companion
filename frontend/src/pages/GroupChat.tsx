@@ -33,9 +33,12 @@ export default function GroupChat() {
         ]);
         if (cancelled) return;
         setGroup(g.data);
-        const sorted = [...(msgs.data || [])].sort(
-          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
+        // 防御性过滤:后端某次异常或脏数据可能带 null,这里跳掉避免下游 crash
+        const sorted = [...(msgs.data || [])]
+          .filter((m): m is Message => m != null)
+          .sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
         setMessages(sorted);
       } catch (e: any) {
         if (cancelled) return;
@@ -78,8 +81,8 @@ export default function GroupChat() {
         const filtered = prev.filter(m => m.id !== tempUserMsg.id);
         return [
           ...filtered,
-          res.data.userMessage,
-          ...res.data.responses,
+          ...(res.data.userMessage ? [res.data.userMessage] : []),
+          ...res.data.responses.filter((m: Message | null): m is Message => m != null),
         ];
       });
     } catch (e: any) {
@@ -96,7 +99,8 @@ export default function GroupChat() {
     setTriggering(true);
     try {
       const res = await groupsApi.triggerInteraction(groupId, model, 2);
-      setMessages(prev => [...prev, ...res.data]);
+      const validResponses = res.data.filter((m: Message | null): m is Message => m != null);
+      setMessages(prev => [...prev, ...validResponses]);
     } catch (e: any) {
       alert('触发失败：' + e.message);
     } finally {

@@ -42,10 +42,11 @@
 }
 .bar {
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 4;
+  /* 硬编码兜底颜色,避免 --accent 解析失败时不可见 */
+  stroke: var(--accent, #87a98f);
+  stroke-width: 5;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 4px var(--accent));
+  filter: drop-shadow(0 0 4px var(--accent, #87a98f));
   transition: stroke-dashoffset var(--dur-slow) var(--ease);
 }
 .val {

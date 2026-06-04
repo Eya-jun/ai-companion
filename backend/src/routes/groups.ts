@@ -387,7 +387,7 @@ router.post('/:id/chat', async (req, res) => {
           .select()
           .single();
 
-        responses.push(aiMessage);
+        if (aiMessage) responses.push(aiMessage);
         contextMessages.push({
           role: 'assistant',
           content: charResponse,
@@ -401,7 +401,7 @@ router.post('/:id/chat', async (req, res) => {
     res.json({
       success: true,
       data: {
-        userMessage,
+        userMessage: userMessage ?? null,
         responses,
         characters,
       },
@@ -521,7 +521,7 @@ router.post('/:id/trigger', async (req, res) => {
           .select()
           .single();
 
-        responses.push(aiMessage);
+        if (aiMessage) responses.push(aiMessage);
         contextMessages.push({
           role: 'assistant',
           content: charResponse,

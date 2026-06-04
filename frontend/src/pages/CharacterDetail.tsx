@@ -79,9 +79,11 @@ export default function CharacterDetail() {
 
   const theme: ThemeKey = themeFor(character.name);
   const currentAffinity = Math.round(affinity?.affinity || 0);
-  // 亲密度: 优先用后端的 intimacy 字段, 没有就 fallback 到 stage 估算
-  const currentIntimacy = affinity?.intimacy !== undefined
-    ? Math.round(affinity.intimacy)
+  // 亲密度: 优先用后端的 intimacy 字段;
+  // 未设置(<= 0,PR5 默认 0)时 fallback 到 stage 估算,避免老角色永远显示 0
+  const hasIntimacy = (affinity?.intimacy ?? 0) > 0;
+  const currentIntimacy = hasIntimacy
+    ? Math.round(affinity!.intimacy)
     : stageToIntimacy(affinity?.stage);
 
   return (

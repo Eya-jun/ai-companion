@@ -13,13 +13,18 @@ router.get('/character/:characterId', async (req, res) => {
     const { characterId } = req.params;
     const { limit = 30, before } = req.query;
 
+    const limitNum = parseInt(limit as string, 10);
+    if (!Number.isFinite(limitNum) || limitNum <= 0) {
+      return res.status(400).json({ success: false, error: 'limit 必须为正整数' });
+    }
+
     let query = supabase
       .from('memories')
       .select('*')
       .eq('character_id', characterId)
       .eq('user_id', userId)
       .order('memory_date', { ascending: false })
-      .limit(parseInt(limit as string, 10));
+      .limit(limitNum);
 
     if (before) {
       query = query.lt('memory_date', before);
@@ -30,6 +35,7 @@ router.get('/character/:characterId', async (req, res) => {
 
     res.json({ success: true, data });
   } catch (error: any) {
+    console.error('[GET /memories/character/:characterId] error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -1,9 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { config } from './config/env';
 import { internalTokenAuth, requireAuth } from './middleware/auth';
 import './types/express'; // 加载 Express.Request 的 user 类型扩展
 import { initPresetCharacters } from './routes/characters';
+import { loadPresetCharacters } from './data/presets';
 import charactersRouter from './routes/characters';
 import chatRouter from './routes/chat';
 import groupsRouter from './routes/groups';
@@ -64,10 +66,36 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 // 启动
 async function start() {
   try {
-    // 初始化预设角色
+    // 初始化预设角色(从 backend/data/characters/*.md 加载)
     console.log('🚀 启动中...');
-    await initPresetCharacters();
-    console.log('✅ 预设角色初始化完成');
+    const presets = await loadPresetCharacters();
+    await initPresetCharacters(presets);
+    console.log(`✅ 预设角色初始化完成 (${presets.length} 个)`);
+
+    // dev 模式:监听角色 .md 文件,改动后自动重新同步到 Supabase
+    if (process.env.NODE_ENV !== 'production') {
+      const chokidar = await import('chokidar');
+      const watchDir = path.resolve(process.cwd(), 'data/characters');
+      const watcher = chokidar.default.watch(path.join(watchDir, '*.md'), {
+        ignored: /(^|[\\\/])\../, // 忽略点文件
+        persistent: true,
+        ignoreInitial: true,
+      });
+      const reload = async (event: string, filePath: string) => {
+        console.log(`\n📝 检测到角色文件 ${event}: ${path.basename(filePath)}`);
+        try {
+          const fresh = await loadPresetCharacters();
+          await initPresetCharacters(fresh);
+          console.log('✅ 已自动同步到 Supabase');
+        } catch (e: any) {
+          console.error('❌ 自动同步失败:', e.message);
+        }
+      };
+      watcher.on('add', p => reload('新增', p));
+      watcher.on('change', p => reload('修改', p));
+      watcher.on('unlink', p => reload('删除', p));
+      console.log(`👀 正在监听角色文件: ${watchDir}/*.md (dev 模式)`);
+    }
 
     app.listen(config.port, () => {
       console.log(`\n🎉 服务器已启动: http://localhost:${config.port}`);

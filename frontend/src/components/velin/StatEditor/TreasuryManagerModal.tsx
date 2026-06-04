@@ -95,6 +95,7 @@ export default function TreasuryManagerModal({ open, characterId, onClose, onCha
 
   const onAiSummarize = async () => {
     if (saving) return;
+    // 一天可以有多条记忆(PR6 后),不再有"覆盖"提示
     setSaving(true);
     setErr(null);
     try {
@@ -115,6 +116,7 @@ export default function TreasuryManagerModal({ open, characterId, onClose, onCha
       setErr('请输入记忆内容');
       return;
     }
+    // 一天可以有多条记忆(PR6 后),不再有"覆盖"提示
     setSaving(true);
     setErr(null);
     try {
