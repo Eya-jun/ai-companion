@@ -1,0 +1,85 @@
+/* Mirrors .stat .ring in prototype.html */
+.root {
+  padding: 14px 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  flex: 1;
+}
+.root::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--accent, var(--hair-2));
+  opacity: 0.5;
+}
+.theme-a { --accent: var(--a-2); }
+.theme-b { --accent: var(--b-2); }
+.theme-c { --accent: var(--c-2); }
+.theme-d { --accent: var(--d-2); }
+
+.ring {
+  width: 56px; height: 56px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.svg {
+  display: block;
+  overflow: visible;  /* 让 stroke-linecap: round 的端点不被裁剪 */
+}
+.track {
+  fill: none;
+  stroke: var(--glass-2);
+  stroke-width: 4;
+}
+.bar {
+  fill: none;
+  /* 硬编码兜底颜色,避免 --accent 解析失败时不可见 */
+  stroke: var(--accent, #87a98f);
+  stroke-width: 5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--accent, #87a98f));
+  transition: stroke-dashoffset var(--dur-slow) var(--ease);
+}
+.val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.lbl {
+  font-size: var(--t-caption);
+  color: var(--text-mute);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+}
+
+/* Interactive (有 onClick) */
+.interactive {
+  cursor: pointer;
+  transition: background var(--dur-quick) var(--ease), transform var(--dur-quick) var(--ease);
+}
+.interactive:hover {
+  background: var(--glass-2);
+}
+.interactive:active {
+  transform: scale(0.97);
+}
+.interactive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

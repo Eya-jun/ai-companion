@@ -12,6 +12,11 @@ export interface Character {
   greeting: string;
   created_at?: string;
   updated_at?: string;
+  // Enriched fields from GET /characters
+  last_message?: string | null;
+  last_message_at?: string | null;
+  unread_count?: number;
+  online?: boolean;
 }
 
 export interface Message {
@@ -65,6 +70,7 @@ export type AffinityStage = 'stranger' | 'familiar' | 'flirtatious' | 'intimate'
 
 export interface AffinityState {
   affinity: number;
+  intimacy: number;
   stage: AffinityStage;
   mode: 'daily' | 'intimate';
   unlockedAt: string | null;

@@ -2,11 +2,14 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { memoriesApi, charactersApi } from '../api/client';
 import MemoryRow, { type Memory } from '../components/MemoryRow';
+import AppShell from '../components/AppShell';
+import ChatHeader from '../components/velin/ChatHeader';
+import styles from './Memories.module.css';
 
 export default function Memories() {
   const { characterId } = useParams();
   const navigate = useNavigate();
-  const [character, setCharacter] = useState<any>(null);
+  const [character, setCharacter] = useState<{ name: string } | null>(null);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [adding, setAdding] = useState(false);
@@ -15,12 +18,16 @@ export default function Memories() {
 
   const load = async () => {
     if (!characterId) return;
-    const [ch, mem] = await Promise.all([
-      charactersApi.get(characterId),
-      memoriesApi.list(characterId),
-    ]);
-    setCharacter(ch.data);
-    setMemories(mem.data);
+    try {
+      const [ch, mem] = await Promise.all([
+        charactersApi.get(characterId),
+        memoriesApi.list(characterId),
+      ]);
+      setCharacter(ch.data);
+      setMemories(mem.data as Memory[]);
+    } catch (e: any) {
+      console.error('[Memories] load failed:', e);
+    }
   };
 
   useEffect(() => { load(); }, [characterId]);
@@ -48,63 +55,155 @@ export default function Memories() {
     }
   };
 
-  if (!character) return <div style={{ padding: 40 }}>加载中...</div>;
+  if (!character) {
+    return (
+      <AppShell showTabBar={false} blobTheme="c">
+        <div className={styles.loading}>加载中…</div>
+      </AppShell>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <button onClick={() => navigate(`/chat/${characterId}`)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>←</button>
-        <strong>{character.name} 的记忆</strong>
-        <button onClick={() => setAdding(true)} style={{ background: '#FF6B9D', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>+ 新增</button>
-      </div>
-      <div style={{ fontSize: 11, color: '#999', marginBottom: 12 }}>共 {memories.length} 条记忆</div>
+    <AppShell showTabBar={false} blobTheme="c">
+      <div className={styles.page}>
+        <ChatHeader
+          title="关键记忆"
+          subtitle={character.name}
+          showBack
+          onBack={() => navigate(`/character/${characterId}`)}
+          right={
+            !adding ? (
+              <button
+                type="button"
+                className={styles['top-add-btn']}
+                onClick={() => setAdding(true)}
+                aria-label="新增记忆"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span>新增</span>
+              </button>
+            ) : false
+          }
+        />
 
-      {adding && (
-        <div style={{ background: 'white', padding: 12, borderRadius: 8, marginBottom: 12, border: '1px solid #FFD9E5' }}>
-          <div style={{ marginBottom: 6, fontSize: 12 }}>
-            日期:<input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ marginLeft: 8, padding: 4 }} />
-          </div>
-          <textarea
-            value={newText}
-            onChange={e => setNewText(e.target.value)}
-            rows={4}
-            placeholder="写下你想记住的事..."
-            style={{ width: '100%', padding: 6, fontSize: 13 }}
-          />
-          <div style={{ marginTop: 8, textAlign: 'right' }}>
-            <button onClick={() => setAdding(false)} style={{ marginRight: 8 }}>取消</button>
-            <button onClick={handleAdd} style={{ background: '#FF6B9D', color: 'white', border: 'none', padding: '5px 12px', borderRadius: 6, cursor: 'pointer' }}>保存</button>
-          </div>
+        <div className={styles.meta}>
+          <span>共 {memories.length} 条记忆</span>
+          <span className={styles['meta-dot']} aria-hidden="true" />
+          <span>按月倒序</span>
         </div>
-      )}
 
-      {grouped.length === 0 && !adding && (
-        <div style={{ textAlign: 'center', color: '#aaa', padding: 32 }}>
-          还没有记忆。可以点右上角"+ 新增"手动加,或者每天 2 点 cron 会自动评估昨天对话。
-        </div>
-      )}
-
-      {grouped.map(([ym, items]) => {
-        const isCollapsed = collapsed[ym];
-        return (
-          <div key={ym} style={{ marginBottom: 8 }}>
-            <div
-              onClick={() => setCollapsed({ ...collapsed, [ym]: !isCollapsed })}
-              style={{ background: 'white', padding: 10, borderRadius: 6, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none' }}
-            >
-              <strong style={{ fontSize: 13 }}>📅 {ym}</strong>
-              <span style={{ fontSize: 12, color: '#999' }}>{isCollapsed ? '▶' : '▼'} ({items.length})</span>
-            </div>
-            {!isCollapsed && (
-              <div style={{ paddingLeft: 12, marginTop: 6 }}>
-                {items.map(m => (
-                  <MemoryRow key={m.id} memory={m} onUpdated={load} onDeleted={load} />
-                ))}
+        <div className={styles.body}>
+          {adding && (
+            <div className={styles['add-card']}>
+              <div className={styles['add-head']}>
+                <span className={styles['add-icon']}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </span>
+                <span>新增记忆</span>
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+
+              <div className={styles['add-row']}>
+                <span className={styles['add-label']}>日期</span>
+                <input
+                  type="date"
+                  className={styles['date-input']}
+                  value={newDate}
+                  onChange={e => setNewDate(e.target.value)}
+                />
+              </div>
+
+              <textarea
+                className={styles.textarea}
+                value={newText}
+                onChange={e => setNewText(e.target.value)}
+                rows={4}
+                placeholder="写下你想记住的事…"
+              />
+
+              <div className={styles['add-actions']}>
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => { setAdding(false); setNewText(''); }}
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles['btn-primary']}`}
+                  onClick={handleAdd}
+                  disabled={!newText.trim()}
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+          )}
+
+          {grouped.length === 0 && !adding && (
+            <div className={styles.empty}>
+              <div className={styles['empty-icon']}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                </svg>
+              </div>
+              还没有关键记忆
+              <div className={styles['empty-hint']}>
+                多聊聊就会有了。每天 2 点会自动评估昨天的对话
+              </div>
+            </div>
+          )}
+
+          {grouped.map(([ym, items]) => {
+            const isCollapsed = !!collapsed[ym];
+            return (
+              <div key={ym} className={styles.group}>
+                <div
+                  className={styles['group-head']}
+                  onClick={() => setCollapsed({ ...collapsed, [ym]: !isCollapsed })}
+                  role="button"
+                  aria-expanded={!isCollapsed}
+                >
+                  <div className={styles['group-title']}>
+                    <span className={styles['group-icon']}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <path d="M16 2v4M8 2v4M3 10h18" />
+                      </svg>
+                    </span>
+                    <span>{ym}</span>
+                  </div>
+                  <div className={styles['group-count']}>
+                    <span>{items.length} 条</span>
+                    <svg
+                      className={`${styles['group-chevron']} ${!isCollapsed ? styles.open : ''}`}
+                      width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
+                </div>
+                {!isCollapsed && (
+                  <div className={styles['group-items']}>
+                    {items.map(m => (
+                      <MemoryRow key={m.id} memory={m} onUpdated={load} onDeleted={load} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </AppShell>
   );
 }

@@ -313,7 +313,8 @@ router.post('/:id/chat', async (req, res) => {
       .select()
       .single();
 
-    // 2. 获取历史消息(限定 user_id)
+    // 2. 获取历史消息(限定 user_id)—— 必须在 userMessage insert 之后,
+    //    确保 LLM 上下文包含用户最新消息
     const { data: history } = await supabase
       .from('messages')
       .select('*')
@@ -327,6 +328,20 @@ router.post('/:id/chat', async (req, res) => {
       content: m.content,
       senderName: m.sender_name,
     }));
+
+    // 防御:确保用户最新消息在 LLM 上下文中(防止 max-context 截断 / 读不到新行 等边缘情况)
+    if (userMessage) {
+      const alreadyIn = contextMessages.some(
+        m => m.role === 'user' && m.content === userMessage.content
+      );
+      if (!alreadyIn) {
+        contextMessages.push({
+          role: 'user',
+          content: userMessage.content,
+          senderName: userMessage.sender_name,
+        });
+      }
+    }
 
     const characters = members.map(m => (m as any).characters).filter(Boolean);
 
@@ -387,7 +402,7 @@ router.post('/:id/chat', async (req, res) => {
           .select()
           .single();
 
-        responses.push(aiMessage);
+        if (aiMessage) responses.push(aiMessage);
         contextMessages.push({
           role: 'assistant',
           content: charResponse,
@@ -401,7 +416,7 @@ router.post('/:id/chat', async (req, res) => {
     res.json({
       success: true,
       data: {
-        userMessage,
+        userMessage: userMessage ?? null,
         responses,
         characters,
       },
@@ -521,7 +536,7 @@ router.post('/:id/trigger', async (req, res) => {
           .select()
           .single();
 
-        responses.push(aiMessage);
+        if (aiMessage) responses.push(aiMessage);
         contextMessages.push({
           role: 'assistant',
           content: charResponse,

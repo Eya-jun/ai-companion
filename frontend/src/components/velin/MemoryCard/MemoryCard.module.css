@@ -1,0 +1,49 @@
+/* Mirrors .memory in prototype.html */
+.root {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  position: relative;
+  overflow: hidden;
+}
+.root::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 12px; bottom: 12px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent, var(--c-2));
+  opacity: 0.7;
+}
+.theme-a { --accent: var(--a-2); }
+.theme-b { --accent: var(--b-2); }
+.theme-c { --accent: var(--c-2); }
+.theme-d { --accent: var(--d-2); }
+
+.date {
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.body { flex: 1; min-width: 0; }
+.text {
+  font-size: var(--t-callout);
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.tag {
+  display: inline-block;
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  letter-spacing: var(--track-loose);
+}

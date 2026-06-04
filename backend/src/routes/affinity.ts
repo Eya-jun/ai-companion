@@ -42,6 +42,7 @@ router.get('/characters/:id/affinity', async (req, res) => {
       success: true,
       data: {
         affinity: state.affinity,
+        intimacy: state.intimacy ?? 0,
         stage: state.current_stage,
         mode: state.mode,
         unlockedAt: state.unlocked_at,
@@ -55,34 +56,57 @@ router.get('/characters/:id/affinity', async (req, res) => {
   }
 });
 
-// PUT /api/characters/:id/affinity 直接设置 affinity(供前端 dev 工具用)
+// PUT /api/characters/:id/affinity 直接设置 affinity 和/或 intimacy(供前端 dev 工具用)
 // 业务上不暴露给用户(只能 cron 评估),但接口本身不做权限限制。
+// body: { affinity?: number (0-100), intimacy?: number (0-100) }
 router.put('/characters/:id/affinity', async (req, res) => {
   try {
     const userId = req.user!.id;
     const characterId = req.params.id;
-    const { affinity } = req.body;
-    if (typeof affinity !== 'number' || affinity < 0 || affinity > 100) {
+    const { affinity, intimacy } = req.body;
+    // 至少要有一个字段
+    if (affinity === undefined && intimacy === undefined) {
+      return res.status(400).json({ success: false, error: 'affinity 或 intimacy 至少需要传一个' });
+    }
+    // 校验范围
+    if (affinity !== undefined && (typeof affinity !== 'number' || affinity < 0 || affinity > 100)) {
       return res.status(400).json({ success: false, error: 'affinity 必须是 0-100 的数字' });
+    }
+    if (intimacy !== undefined && (typeof intimacy !== 'number' || intimacy < 0 || intimacy > 100)) {
+      return res.status(400).json({ success: false, error: 'intimacy 必须是 0-100 的数字' });
     }
     const supabase = getSupabaseAdmin();
     const state = await ensureState(userId, characterId);
-    const newAffinity = Math.round(affinity);
-    const stageName = newAffinity >= 80 ? 'intimate' : newAffinity >= 50 ? 'flirtatious' : newAffinity >= 20 ? 'familiar' : 'stranger';
-    const crossed = newAffinity >= 100 && !state.unlocked_at;
+    const update: Record<string, any> = {};
+    let newAffinity = state.affinity;
+    if (affinity !== undefined) {
+      newAffinity = Math.round(affinity);
+      const stageName = newAffinity >= 80 ? 'intimate' : newAffinity >= 50 ? 'flirtatious' : newAffinity >= 20 ? 'familiar' : 'stranger';
+      const crossed = newAffinity >= 100 && !state.unlocked_at;
+      update.affinity = newAffinity;
+      update.current_stage = stageName;
+      update.unlocked_at = crossed ? new Date().toISOString() : (state.unlocked_at || null);
+    }
+    if (intimacy !== undefined) {
+      update.intimacy = Math.round(intimacy);
+    }
     const { data, error } = await supabase
       .from('user_character_state')
-      .update({
-        affinity: newAffinity,
-        current_stage: stageName,
-        unlocked_at: crossed ? new Date().toISOString() : (state.unlocked_at || null),
-      })
+      .update(update)
       .eq('user_id', userId)
       .eq('character_id', characterId)
       .select()
       .single();
     if (error) throw error;
-    res.json({ success: true, data: { affinity: data.affinity, stage: data.current_stage, unlockedAt: data.unlocked_at } });
+    res.json({
+      success: true,
+      data: {
+        affinity: data.affinity,
+        intimacy: data.intimacy ?? 0,
+        stage: data.current_stage,
+        unlockedAt: data.unlocked_at,
+      },
+    });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }

@@ -13,13 +13,18 @@ router.get('/character/:characterId', async (req, res) => {
     const { characterId } = req.params;
     const { limit = 30, before } = req.query;
 
+    const limitNum = parseInt(limit as string, 10);
+    if (!Number.isFinite(limitNum) || limitNum <= 0) {
+      return res.status(400).json({ success: false, error: 'limit 必须为正整数' });
+    }
+
     let query = supabase
       .from('memories')
       .select('*')
       .eq('character_id', characterId)
       .eq('user_id', userId)
       .order('memory_date', { ascending: false })
-      .limit(parseInt(limit as string, 10));
+      .limit(limitNum);
 
     if (before) {
       query = query.lt('memory_date', before);
@@ -30,6 +35,7 @@ router.get('/character/:characterId', async (req, res) => {
 
     res.json({ success: true, data });
   } catch (error: any) {
+    console.error('[GET /memories/character/:characterId] error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -102,15 +108,16 @@ ${conversationText}
       model: model as LLMProvider,
     });
 
-    // 4. 保存到数据库(user_id 加上)
+    // 4. 保存到数据库(user_id 加上) —— 允许多条,纯 insert
     const { data, error } = await supabase
       .from('memories')
-      .upsert({
+      .insert({
         character_id: characterId,
         user_id: userId,
         summary,
         memory_date: targetDate,
-      }, { onConflict: 'character_id,user_id,memory_date' })
+        source: 'ai',
+      })
       .select()
       .single();
 
@@ -143,10 +150,10 @@ router.post('/', async (req, res) => {
 
     const { data, error } = await supabase
       .from('memories')
-      .upsert({
+      .insert({
         user_id: userId, character_id: characterId,
         memory_date: date, summary, source: 'user',
-      }, { onConflict: 'user_id,character_id,memory_date' })
+      })
       .select()
       .single();
     if (error) throw error;
@@ -228,6 +235,72 @@ router.get('/character/:characterId/latest', async (req, res) => {
     if (error && error.code !== 'PGRST116') throw error;
 
     res.json({ success: true, data: data || null });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 获取某角色所有珍藏记忆(is_starred = true)
+router.get('/character/:characterId/starred', async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const supabase = getSupabaseAdmin();
+    const { characterId } = req.params;
+    const { limit = 50, before } = req.query;
+
+    let query = supabase
+      .from('memories')
+      .select('*')
+      .eq('character_id', characterId)
+      .eq('user_id', userId)
+      .eq('is_starred', true)
+      .order('starred_at', { ascending: false })
+      .limit(parseInt(limit as string, 10));
+
+    if (before) {
+      query = query.lt('starred_at', before);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 切换单条记忆的珍藏状态(不带 starred = toggle)
+router.put('/:id/star', async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const supabase = getSupabaseAdmin();
+    const { id } = req.params;
+    const { starred } = req.body; // boolean, optional — if omitted, toggle current value
+
+    const { data: existing } = await supabase
+      .from('memories')
+      .select('id, user_id, is_starred')
+      .eq('id', id)
+      .single();
+    if (!existing) return res.status(404).json({ success: false, error: '记忆不存在' });
+    if (existing.user_id !== userId) {
+      return res.status(403).json({ success: false, error: '无权修改此记忆' });
+    }
+
+    const currentStarred = existing.is_starred ?? false;
+    const newStarred = starred === undefined ? !currentStarred : !!starred;
+    const { data, error } = await supabase
+      .from('memories')
+      .update({
+        is_starred: newStarred,
+        starred_at: newStarred ? new Date().toISOString() : null,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, data });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }

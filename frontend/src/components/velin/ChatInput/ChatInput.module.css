@@ -1,0 +1,43 @@
+/* Mirrors .chat-input in prototype.html */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  min-height: 56px;
+}
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  flex-shrink: 0;
+}
+.field {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-pill);
+  color: var(--text-mute);
+  font-size: var(--t-sub);
+  cursor: text;
+}
+.field-input {
+  width: 100%;
+  height: 100%;
+  font-size: var(--t-sub);
+  color: var(--text);
+}
+.field-input::placeholder { color: var(--text-mute); }
+.send {
+  background: linear-gradient(135deg, var(--accent) 0%, #c0c0c8 100%);
+  color: var(--canvas);
+  border-color: transparent;
+}

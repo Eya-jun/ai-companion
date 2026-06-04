@@ -213,6 +213,8 @@ export const groupsApi = {
 export const memoriesApi = {
   list: (characterId: string) =>
     request<{ success: boolean; data: any[] }>(`/memories/character/${characterId}`),
+  listStarred: (characterId: string) =>
+    request<{ success: boolean; data: any[] }>(`/memories/character/${characterId}/starred`),
   latest: (characterId: string) =>
     request<{ success: boolean; data: any }>(`/memories/character/${characterId}/latest`),
   summarize: (characterId: string, date?: string, model?: LLMProvider) =>
@@ -230,6 +232,11 @@ export const memoriesApi = {
     }),
   delete: (id: string) =>
     request<{ success: boolean }>(`/memories/${id}`, { method: 'DELETE' }),
+  toggleStar: (id: string, starred?: boolean) =>
+    request<{ success: boolean; data: any }>(`/memories/${id}/star`, {
+      method: 'PUT',
+      body: JSON.stringify({ starred }),
+    }),
 };
 
 // ========== Extras (角色补充资料) ==========
@@ -291,6 +298,25 @@ export const profileApi = {
   },
 };
 
+// ========== Avatars (角色头像) ==========
+export const avatarsApi = {
+  uploadCharacterAvatar: async (characterId: string, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const headers = authHeaders();
+    const res = await fetch(`${API_BASE}/avatars/upload/${characterId}`, {
+      method: 'POST',
+      body: fd,
+      headers,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || '上传失败');
+    }
+    return res.json() as Promise<{ success: boolean; data: { url: string; character: Character } }>;
+  },
+};
+
 // ========== Affinity (好感度) ==========
 export const affinityApi = {
   get: (characterId: string) =>
@@ -305,9 +331,9 @@ export const affinityApi = {
     }),
   getSpecialGreeting: (characterId: string) =>
     request<{ success: boolean; data: { greeting: string } }>(`/characters/${characterId}/special-greeting`),
-  // 直接设置 affinity(供 dev 工具用,生产可保留)
-  set: (characterId: string, affinity: number) =>
-    request<{ success: boolean; data: { affinity: number; stage: string; unlockedAt: string | null } }>(`/characters/${characterId}/affinity`, {
-      method: 'PUT', body: JSON.stringify({ affinity }),
+  // 直接设置 affinity 和/或 intimacy(供 dev 工具用,生产可保留)
+  set: (characterId: string, payload: { affinity?: number; intimacy?: number }) =>
+    request<{ success: boolean; data: { affinity: number; intimacy: number; stage: string; unlockedAt: string | null } }>(`/characters/${characterId}/affinity`, {
+      method: 'PUT', body: JSON.stringify(payload),
     }),
 };

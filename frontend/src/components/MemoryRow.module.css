@@ -1,0 +1,218 @@
+/* Vélin · 尺素 — MemoryRow
+   Glass card with theme-colored left edge accent (mirrors MemoryCard / CharacterCard). */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  position: relative;
+  overflow: hidden;
+  transition: background var(--dur-quick) var(--ease);
+}
+.root::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 12px; bottom: 12px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent, var(--c-2));
+  opacity: 0.7;
+}
+.theme-a { --accent: var(--a-2); }
+.theme-b { --accent: var(--b-2); }
+.theme-c { --accent: var(--c-2); }
+.theme-d { --accent: var(--d-2); }
+.theme-user { --accent: var(--user-2); }
+
+/* ===== header row: date + source tag + actions ===== */
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.headLeft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  min-width: 0;
+  flex: 1;
+}
+.date {
+  font-size: var(--t-callout);
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--track-tight);
+}
+.sourceTag {
+  display: inline-block;
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  letter-spacing: var(--track-loose);
+}
+.sourceTagAi {
+  color: var(--c-2);
+  border-color: var(--c-2);
+  opacity: 0.7;
+}
+
+/* ===== action buttons ===== */
+.actions {
+  display: flex;
+  gap: var(--s-1);
+  flex-shrink: 0;
+}
+.iconBtn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition:
+    background var(--dur-quick) var(--ease),
+    color var(--dur-quick) var(--ease),
+    border-color var(--dur-quick) var(--ease),
+    transform var(--dur-quick) var(--ease);
+}
+.iconBtn:hover {
+  background: var(--glass-2);
+  color: var(--text);
+  border-color: var(--hair-2);
+}
+.iconBtn:active {
+  transform: scale(0.94);
+  background: var(--glass-3);
+}
+.iconBtnDanger:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.iconBtn svg {
+  display: block;
+}
+
+/* ===== body ===== */
+.summary {
+  font-size: var(--t-callout);
+  color: var(--text-2);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.affinity {
+  font-size: var(--t-caption);
+  color: var(--text-dim);
+  margin-top: var(--s-1);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.affinityPos {
+  color: var(--b-2);
+}
+.affinityNeg {
+  color: var(--danger);
+}
+
+/* ===== edit mode ===== */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--glass-2);
+  border: 1px solid var(--hair-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--t-callout);
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--dur-quick) var(--ease), background var(--dur-quick) var(--ease);
+}
+.textarea:focus {
+  border-color: var(--hair-2);
+  background: var(--glass-3);
+}
+.textarea::placeholder {
+  color: var(--text-dim);
+}
+.hint {
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  letter-spacing: var(--track-loose);
+}
+.hintAccent {
+  color: var(--text-2);
+}
+
+.editorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px var(--s-3);
+  border-radius: var(--r-sm);
+  font-size: var(--t-sub);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--hair);
+  background: var(--glass-1);
+  color: var(--text-2);
+  transition: background var(--dur-quick) var(--ease), color var(--dur-quick) var(--ease), border-color var(--dur-quick) var(--ease);
+}
+.btn:hover {
+  background: var(--glass-2);
+  color: var(--text);
+  border-color: var(--hair-2);
+}
+.btn:active {
+  background: var(--glass-3);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btnPrimary {
+  color: var(--canvas);
+  background: var(--text);
+  border-color: transparent;
+  font-weight: 600;
+}
+.btnPrimary:hover {
+  background: var(--text);
+  color: var(--canvas);
+  border-color: transparent;
+  opacity: 0.92;
+}
+.btnPrimary:disabled {
+  background: var(--glass-2);
+  color: var(--text-dim);
+}
+.btn svg {
+  display: block;
+}

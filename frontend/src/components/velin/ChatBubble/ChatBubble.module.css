@@ -1,0 +1,58 @@
+/* Mirrors .msg-row.them / .msg-row.me / .msg-bubble in prototype.html */
+.row {
+  display: flex;
+  gap: var(--s-2);
+  align-items: flex-end;
+  max-width: 100%;
+}
+.them { align-self: flex-start; max-width: 86%; }
+.me   { align-self: flex-end; max-width: 86%; flex-direction: row-reverse; }
+
+.bubble {
+  padding: 10px 14px;
+  border-radius: 20px;
+  font-size: var(--t-callout);
+  line-height: 1.45;
+  letter-spacing: var(--track-normal);
+  color: var(--text);
+  position: relative;
+  word-break: break-word;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.them .bubble {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hair);
+  border-bottom-left-radius: 6px;
+}
+.me .bubble {
+  background: linear-gradient(135deg, var(--a-1) 0%, #4a7560 100%);
+  border: 1px solid rgba(135, 169, 143, 0.30);
+  border-bottom-right-radius: 6px;
+  color: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px -12px rgba(45, 90, 74, 0.6);
+}
+.me.theme-b .bubble {
+  background: linear-gradient(135deg, var(--b-1) 0%, #8aa1b6 100%);
+  border-color: rgba(197, 212, 224, 0.30);
+  box-shadow: 0 8px 24px -12px rgba(70, 100, 130, 0.6);
+}
+.me.theme-c .bubble {
+  background: linear-gradient(135deg, var(--c-1) 0%, #8a78a3 100%);
+  border-color: rgba(197, 181, 208, 0.30);
+  box-shadow: 0 8px 24px -12px rgba(110, 90, 140, 0.6);
+}
+.me.theme-d .bubble {
+  background: linear-gradient(135deg, var(--d-1) 0%, #b8a587 100%);
+  border-color: rgba(232, 217, 192, 0.30);
+  box-shadow: 0 8px 24px -12px rgba(150, 130, 100, 0.6);
+}
+
+.stamp {
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  margin: 0 4px 4px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.me .stamp { text-align: right; }

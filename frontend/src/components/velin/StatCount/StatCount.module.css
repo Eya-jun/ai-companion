@@ -1,0 +1,70 @@
+/* Mirrors .stat.d.count in prototype.html */
+.root {
+  flex: 1;
+  padding: 12px 10px 10px;
+  border-radius: var(--r-md);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
+.root::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--accent, var(--hair-2));
+  opacity: 0.5;
+}
+.theme-d { --accent: var(--d-2); }
+.theme-a { --accent: var(--a-2); }
+.theme-b { --accent: var(--b-2); }
+.theme-c { --accent: var(--c-2); }
+
+.big {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(180deg, var(--text) 0%, var(--text-mute) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px var(--accent));
+}
+.lbl {
+  font-size: var(--t-caption);
+  color: var(--text-mute);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.unit {
+  font-size: var(--t-micro);
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+/* Interactive (有 onClick) */
+.interactive {
+  cursor: pointer;
+  transition: background var(--dur-quick) var(--ease), transform var(--dur-quick) var(--ease);
+}
+.interactive:hover {
+  background: var(--glass-2);
+}
+.interactive:active {
+  transform: scale(0.97);
+}
+.interactive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

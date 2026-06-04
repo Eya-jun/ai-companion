@@ -1,0 +1,25 @@
+/* Vélin · 尺素 — Motion utilities
+   One keyframe (ambient bob) + transition tokens.
+   Restraint is the principle — only use where the prototype uses it. */
+
+@keyframes velin-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes velin-bob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(8px, -6px) scale(1.05); }
+}
+
+.velin-fade-up {
+  animation: velin-fade-up 0.9s var(--ease) both;
+}
+
+.velin-bob {
+  animation: velin-bob 16s var(--ease) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .velin-fade-up, .velin-bob { animation: none; }
+}

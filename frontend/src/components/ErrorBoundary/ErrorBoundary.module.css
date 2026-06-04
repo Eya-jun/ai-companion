@@ -1,0 +1,92 @@
+/* Vélin · 尺素 — ErrorBoundary fallback */
+
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--s-6);
+  background: var(--canvas);
+}
+
+.card {
+  max-width: 360px;
+  width: 100%;
+  padding: var(--s-7) var(--s-5);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-xl);
+  text-align: center;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.icon {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-2);
+  border: 1px solid var(--hair-2);
+  color: var(--text-mute);
+  margin-bottom: var(--s-4);
+}
+
+.title {
+  font-size: var(--t-title);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-tight);
+  margin-bottom: var(--s-2);
+}
+
+.message {
+  font-size: var(--t-sub);
+  color: var(--text-mute);
+  line-height: 1.5;
+  margin-bottom: var(--s-5);
+  word-break: break-word;
+  /* 防止 message 太长撑爆卡片 */
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.actions {
+  display: flex;
+  gap: var(--s-2);
+  justify-content: center;
+}
+
+.btnSecondary,
+.btnPrimary {
+  flex: 1;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-sub);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease);
+  border: 1px solid var(--hair);
+}
+
+.btnSecondary {
+  background: var(--glass-1);
+  color: var(--text-2);
+}
+.btnSecondary:hover {
+  background: var(--glass-2);
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, var(--accent) 0%, #c0c0c8 100%);
+  color: var(--canvas);
+  border-color: transparent;
+  font-weight: 600;
+}
+.btnPrimary:hover {
+  filter: brightness(1.05);
+}

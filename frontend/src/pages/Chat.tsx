@@ -1,79 +1,78 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { charactersApi, chatApi, memoriesApi, affinityApi, sendStream } from '../api/client';
+import { useParams } from 'react-router-dom';
+import {
+  charactersApi,
+  chatApi,
+  memoriesApi,
+  affinityApi,
+  sendStream,
+} from '../api/client';
 import type { Character, Message, LLMProvider, AffinityState } from '../api/types';
-import { useAuth } from '../contexts/AuthContext';
-import MessageBubble from '../components/MessageBubble';
-import AffinityMeter from '../components/AffinityMeter';
-import IntimateModeToggle from '../components/IntimateModeToggle';
-import UnlockCelebration from '../components/UnlockCelebration';
-import './Chat.css';
+import AppShell from '../components/AppShell';
+import ChatHeader from '../components/velin/ChatHeader';
+import ChatBubble from '../components/velin/ChatBubble';
+import ChatInput from '../components/velin/ChatInput';
+import Avatar from '../components/velin/Avatar';
+import { themeFor } from '../theme/characterThemes';
+import styles from './Chat.module.css';
 
 export default function Chat() {
-  const { profile } = useAuth();
-  const { characterId } = useParams();
-  const navigate = useNavigate();
+  const { characterId = '' } = useParams();
   const [character, setCharacter] = useState<Character | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [model, setModel] = useState<LLMProvider>('deepseek');
-  const [affinity, setAffinity] = useState<AffinityState | null>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [latestMemory, setLatestMemory] = useState<any>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sending, setSending] = useState(false);
+  const [model] = useState<LLMProvider>('deepseek');
+  const [, setAffinity] = useState<AffinityState | null>(null);
+  const [, setLatestMemory] = useState<unknown>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
+  // === LOAD ===
   useEffect(() => {
     if (!characterId) return;
+    let cancelled = false;
+    const loadAll = async () => {
+      if (!characterId) return;
+      try {
+        const [char, msgs, mem, aff] = await Promise.all([
+          charactersApi.get(characterId),
+          chatApi.getMessages(characterId),
+          memoriesApi.latest(characterId).catch(() => ({ data: null })),
+          affinityApi.get(characterId).catch(() => ({ data: null })),
+        ]);
+        if (cancelled) return;
+        setCharacter(char.data);
+        // 防御性排序:无论 API 返回什么顺序,按 created_at 升序
+        const sorted = [...(msgs.data || [])].sort((a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        setMessages(sorted);
+        setLatestMemory(mem.data);
+        if (aff.data) setAffinity(aff.data);
+      } catch (e: any) {
+        if (cancelled) return;
+        console.error('[Chat] loadAll failed:', e);
+        alert('加载失败：' + e.message);
+      }
+    };
     loadAll();
+    return () => { cancelled = true; };
   }, [characterId]);
 
+  // === SCROLL TO BOTTOM ON NEW MESSAGES ===
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages]);
 
-  const loadAll = async () => {
-    if (!characterId) return;
-    try {
-      const [char, msgs, mem, aff] = await Promise.all([
-        charactersApi.get(characterId),
-        chatApi.getMessages(characterId),
-        memoriesApi.latest(characterId).catch(() => ({ data: null })),
-        affinityApi.get(characterId).catch(() => ({ data: null })),
-      ]);
-      setCharacter(char.data);
-      // 防御性排序:无论 API 返回什么顺序,按 created_at 升序
-      const sorted = [...(msgs.data || [])].sort((a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-      setMessages(sorted);
-      setLatestMemory(mem.data);
-      if (aff.data) setAffinity(aff.data);
-    } catch (e: any) {
-      console.error('[Chat] loadAll failed:', e);
-      alert('加载失败：' + e.message);
-    }
-  };
-
-  // 首次达到 100% → 弹庆祝(localStorage 标记本设备只弹一次)
-  useEffect(() => {
-    if (!affinity?.unlockedAt || !characterId) return;
-    const seenKey = `seen_celebration_for_${characterId}`;
-    if (!localStorage.getItem(seenKey)) {
-      setShowCelebration(true);
-      localStorage.setItem(seenKey, 'true');
-    }
-  }, [affinity?.unlockedAt, characterId]);
-
-  const send = async () => {
-    if (!characterId || loading) return;
-    const userText = input.trim();
+  const send = async (text: string) => {
+    if (!characterId || !character || sending) return;
+    const userText = text.trim();
     if (!userText) {
       alert('消息不能为空');
       return;
     }
-    setInput('');
-    setLoading(true);
+    setSending(true);
 
     // 乐观插入用户消息
     const tempUserMsg: Message = {
@@ -95,7 +94,7 @@ export default function Chat() {
       role: 'assistant',
       content: '',
       sender_type: 'character',
-      sender_name: character?.name || 'AI',
+      sender_name: character.name,
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, aiMsg]);
@@ -107,174 +106,87 @@ export default function Chat() {
             m.id === aiMsgId ? { ...m, content: m.content + evt.delta } : m
           ));
         }
-        // done / meta / error 都不需要额外动作(meta 已由我们 set 了空消息)
+        // done / meta / error 都不需要额外动作
       });
       // 不 reload:流式完成时保持乐观状态。
-      // 临时 id ('temp-ai-xxx')只在刷新页面时会被真实 id 替换(loadAll 会拉真实历史)。
-      // 之前 reload 会因为 created_at 跟乐观插入的时间戳错位,导致 AI 消息被排到用户消息上方。
     } catch (e: any) {
       // 流失败时,移除空 AI 消息并提示
       setMessages(prev => prev.filter(m => m.id !== aiMsgId));
       alert('发送失败：' + e.message);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  // (handleSummarize 已删,记忆管理入口在 Memories 页)
-
-  const handleClear = async () => {
-    if (!characterId) return;
-    if (!confirm('清除所有聊天记录？')) return;
-    try {
-      await chatApi.clear(characterId);
-      setMessages([]);
-    } catch (e: any) {
-      alert('清除失败：' + e.message);
+      setSending(false);
     }
   };
 
   if (!character) {
-    return <div className="chat-loading">加载中...</div>;
+    return (
+      <AppShell showTabBar={false}>
+        <div className={styles.page}>
+          <div className={styles.body} />
+        </div>
+      </AppShell>
+    );
   }
 
+  const theme = themeFor(character.name) as 'a' | 'b' | 'c' | 'd';
+  const userFirstChar = character.name.charAt(0);
+
   return (
-    <div className="chat-page">
-      <header className="chat-header">
-        <button className="back-btn" onClick={() => navigate('/')}>←</button>
-        <div className="chat-header-info">
-          <div className="chat-header-avatar">
-            {character.avatar?.startsWith('data:image') || character.avatar?.startsWith('http') ? (
-              <img src={character.avatar} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-            ) : (
-              <span style={{ fontSize: 24 }}>{character.avatar}</span>
-            )}
-          </div>
-          <div>
-            <div className="chat-header-name">{character.name}</div>
-            <div className="chat-header-desc">{character.description}</div>
-            {affinity && (
-              <div style={{ marginTop: 4 }}>
-                <AffinityMeter affinity={affinity.affinity} stage={affinity.stage} variant="header" />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="chat-header-actions">
-          {affinity?.unlockedAt && (
-            <IntimateModeToggle
-              characterId={characterId!}
-              mode={affinity.mode}
-              onChange={m => setAffinity(s => s ? { ...s, mode: m } : s)}
-            />
+    <AppShell showTabBar={false} blobTheme={theme}>
+      <div className={styles.page}>
+        <ChatHeader
+          title={character.name}
+          subtitle="在线 · 刚刚"
+          live
+        />
+        <div className={styles.body} ref={scrollRef}>
+          {messages.length > 0 && (
+            <div className={styles.meta}>
+              {new Date(messages[0].created_at).toLocaleString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
           )}
-          <select
-            value={model}
-            onChange={e => setModel(e.target.value as LLMProvider)}
-            className="model-select"
-          >
-            <option value="kimi">🤖 Kimi</option>
-            <option value="deepseek">🧠 DeepSeek</option>
-            <option value="minimax">✨ MiniMax</option>
-          </select>
-          <button
-            className="header-btn"
-            onClick={() => navigate(`/character/${characterId}/extras`)}
-            title="补充资料管理"
-          >
-            📋
-          </button>
-          <button className="header-btn" onClick={() => navigate(`/character/${characterId}/memories`)} title="记忆管理">
-            📝
-          </button>
-          <button className="header-btn" onClick={handleClear} title="清除聊天记录">
-            🗑️
-          </button>
+          {messages.map((m, i) => {
+            const isMe = m.role === 'user';
+            const prev = messages[i - 1];
+            const showMeta =
+              !prev ||
+              prev.role !== m.role ||
+              new Date(m.created_at).getTime() -
+                new Date(prev.created_at).getTime() >
+                60_000;
+            return (
+              <ChatBubble
+                key={m.id || i}
+                sender={isMe ? 'me' : 'them'}
+                theme={isMe ? 'a' : theme}
+                avatar={
+                  isMe ? (
+                    <Avatar theme="user" label="我" size="sm" />
+                  ) : (
+                    <Avatar theme={theme} label={userFirstChar} imageUrl={character.avatar} size="sm" />
+                  )
+                }
+                stamp={
+                  showMeta
+                    ? new Date(m.created_at).toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : undefined
+                }
+              >
+                {m.content}
+              </ChatBubble>
+            );
+          })}
         </div>
-      </header>
-
-      {latestMemory && (
-        <div className="memory-banner" onClick={() => alert(latestMemory.summary)}>
-          📔 最新记忆 · {latestMemory.memory_date} · 点击查看
+        <div className={styles['input-zone']}>
+          <ChatInput onSend={send} />
         </div>
-      )}
-
-      <div className="chat-messages">
-        {messages.length === 0 ? (
-          <div className="empty-chat">
-            <div className="empty-avatar">
-              {character.avatar?.startsWith('data:image') || character.avatar?.startsWith('http') ? (
-                <img src={character.avatar} alt={character.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              ) : (
-                <span style={{ fontSize: 36 }}>{character.avatar}</span>
-              )}
-            </div>
-            <div className="empty-name">{character.name}</div>
-            <div className="empty-greeting">{character.greeting}</div>
-            <div className="empty-hint">开始聊天吧～</div>
-          </div>
-        ) : (
-          messages.map(m => (
-            <MessageBubble
-              key={m.id}
-              content={m.content}
-              senderName={m.sender_name || ''}
-              senderAvatar={character.avatar}
-              userAvatar={profile?.avatar_url ?? undefined}
-              isUser={m.sender_type === 'user'}
-              senderType={m.sender_type}
-            />
-          ))
-        )}
-        {loading && (
-          <div className="message-row character">
-            <div className="message-avatar">{character.avatar}</div>
-            <div className="message-bubble-wrapper">
-              <div className="message-sender">{character.name}</div>
-              <div className="message-bubble character">
-                <div className="typing">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
       </div>
-
-      <div className="chat-input-area">
-        <textarea
-          className="chat-input"
-          placeholder="说点什么..."
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          rows={1}
-        />
-        <button
-          className="send-btn"
-          onClick={send}
-          disabled={!input.trim() || loading}
-        >
-          发送
-        </button>
-      </div>
-
-      {showCelebration && character && (
-        <UnlockCelebration
-          characterId={characterId!}
-          characterName={character.name}
-          characterAvatar={character.avatar}
-          onClose={() => setShowCelebration(false)}
-        />
-      )}
-    </div>
+    </AppShell>
   );
 }

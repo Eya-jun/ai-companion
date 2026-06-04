@@ -1,0 +1,322 @@
+/* Vélin · Memories — 关键记忆 */
+
+.page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-mute);
+  font-size: var(--t-body);
+}
+
+.meta {
+  padding: 0 var(--s-4) var(--s-3);
+  font-size: var(--t-caption);
+  color: var(--text-dim);
+  letter-spacing: var(--track-loose);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.meta-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  opacity: 0.6;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--s-4) calc(var(--s-9) + env(safe-area-inset-bottom, 0));
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+/* ===== Add form (inline, glass card) ===== */
+
+.add-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-lg);
+}
+
+.add-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-callout);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-normal);
+}
+
+.add-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--glass-2);
+  border: 1px solid var(--hair-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.add-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.add-label {
+  font-size: var(--t-caption);
+  color: var(--text-mute);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+}
+
+.date-input {
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: var(--t-callout);
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--dur-base) var(--ease);
+  color-scheme: dark;
+}
+
+.date-input:focus {
+  border-color: var(--text-mute);
+}
+
+.textarea {
+  width: 100%;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: var(--t-callout);
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.6;
+  box-sizing: border-box;
+  transition: border-color var(--dur-base) var(--ease),
+              background var(--dur-base) var(--ease);
+}
+
+.textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.textarea:focus {
+  border-color: var(--text-mute);
+  background: var(--glass-2);
+}
+
+.add-actions {
+  display: flex;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
+
+.btn {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: var(--t-callout);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease);
+  border: 1px solid var(--hair);
+  background: var(--glass-1);
+  color: var(--text);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--glass-2);
+  border-color: var(--hair-2);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, #c0c0c8 100%);
+  color: var(--canvas);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+  background: linear-gradient(135deg, var(--accent) 0%, #c0c0c8 100%);
+}
+
+/* ===== Empty state ===== */
+
+.empty {
+  margin-top: var(--s-7);
+  text-align: center;
+  color: var(--text-mute);
+  font-size: var(--t-callout);
+  line-height: 1.7;
+  padding: 0 var(--s-4);
+}
+
+.empty-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--s-3);
+  border-radius: 50%;
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-mute);
+}
+
+.empty-hint {
+  font-size: var(--t-caption);
+  color: var(--text-dim);
+  margin-top: var(--s-2);
+  letter-spacing: var(--track-loose);
+}
+
+/* ===== Month group ===== */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-3) var(--s-4);
+  background: var(--glass-1);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--dur-base) var(--ease);
+}
+
+.group-head:hover {
+  background: var(--glass-2);
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-headline);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: var(--track-tight);
+}
+
+.group-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-mute);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.group-count {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-caption);
+  color: var(--text-dim);
+  letter-spacing: var(--track-loose);
+  font-variant-numeric: tabular-nums;
+}
+
+.group-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-mute);
+  transition: transform var(--dur-base) var(--ease);
+}
+
+.group-chevron.open {
+  transform: rotate(180deg);
+}
+
+.group-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding-left: var(--s-3);
+  border-left: 1px solid var(--hair);
+  margin-left: var(--s-4);
+}
+
+/* ===== Add-button (top-right "新增" trigger) ===== */
+
+.top-add-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: var(--t-caption);
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease);
+  border: 1px solid var(--hair-2);
+  background: var(--glass-2);
+  color: var(--text);
+}
+
+.top-add-btn:hover {
+  background: var(--glass-3);
+  border-color: var(--text-mute);
+}
+
+.top-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
