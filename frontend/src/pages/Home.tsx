@@ -4,6 +4,7 @@ import type { Character } from '../api/types';
 import AppShell from '../components/AppShell';
 import CharacterCard from '../components/velin/CharacterCard';
 import SearchPill from '../components/velin/SearchPill';
+import SearchModal from '../components/velin/SearchModal';
 import styles from './Home.module.css';
 
 type Filter = 'all' | 'unread' | 'starred';
@@ -27,9 +28,7 @@ export default function Home() {
   const [extrasCount, setExtrasCount] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
-
-  // TODO: SearchModal integration deferred to Task 8.1
-  // const [searchOpen, setSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -51,8 +50,6 @@ export default function Home() {
     })();
   }, []);
 
-  // extrasCount currently only drives background fetches (preserved from old Home);
-  // a future card variant may surface the badge count.
   void extrasCount;
 
   const total = characters.length;
@@ -65,8 +62,7 @@ export default function Home() {
           <div className={styles['title-row']}>
             <h1 className={styles.title}>消息</h1>
             <div className={styles.actions}>
-              {/* SearchPill click handler wired in Task 8.1 */}
-              <SearchPill onClick={() => { /* opens SearchModal in Task 8.1 */ }} />
+              <SearchPill onClick={() => setSearchOpen(true)} />
               <button
                 className={styles['icon-btn']}
                 aria-label="新建"
@@ -119,6 +115,12 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      <SearchModal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        characters={characters}
+      />
     </AppShell>
   );
 }
