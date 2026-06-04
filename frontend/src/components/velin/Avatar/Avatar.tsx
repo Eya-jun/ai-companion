@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEvent } from 'react';
+import { useState, type CSSProperties, type MouseEvent } from 'react';
 import styles from './Avatar.module.css';
 
 type Size = 'sm' | 'md' | 'lg' | 'xl';
@@ -36,6 +36,10 @@ export default function Avatar({
   const themeClass = styles[`theme-${theme}`];
   const hasImage = !!(imageUrl && isUrl(imageUrl));
 
+  // Track img load failure; reset automatically when imageUrl changes (key prop remounts the img).
+  const [imgErrored, setImgErrored] = useState(false);
+  const showImg = hasImage && !imgErrored;
+
   return (
     <div
       className={[styles.root, sizeClass, themeClass].filter(Boolean).join(' ')}
@@ -45,8 +49,14 @@ export default function Avatar({
       aria-label={ariaLabel}
     >
       {showRing && <span className={styles.ring} aria-hidden="true" />}
-      {hasImage ? (
-        <img className={styles.img} src={imageUrl} alt={ariaLabel || label} />
+      {showImg ? (
+        <img
+          key={imageUrl}
+          className={styles.img}
+          src={imageUrl}
+          alt={ariaLabel || label}
+          onError={() => setImgErrored(true)}
+        />
       ) : (
         <span className={styles.label}>{label}</span>
       )}
