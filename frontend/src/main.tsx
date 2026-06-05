@@ -8,3 +8,5 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+// preview verification test 2026-06-05T02:29:46Z - safe to revert
