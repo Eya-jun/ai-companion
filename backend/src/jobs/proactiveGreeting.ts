@@ -2,6 +2,13 @@ import cron from 'node-cron';
 import { getSupabaseAdmin } from '../config/supabase';
 import { generateChatResponse } from '../services/llm';
 
+const MAX_DAILY_PROACTIVE = 5;
+const MAX_CONTENT_LENGTH = 300;
+const PREVIEW_LENGTH = 50;
+const LLM_TEMPERATURE = 0.9;
+const MESSAGE_HISTORY_LIMIT = 3;
+const PROMPT_MAX_CHARS = 60;
+
 const THRESHOLDS_MS = [
   { maxAffinity: 20,  ms: 24 * 3600 * 1000 },  // 陌生
   { maxAffinity: 50,  ms: 12 * 3600 * 1000 },  // 熟悉
@@ -23,6 +30,17 @@ function getStageLabel(affinity: number): string {
   return '亲密';
 }
 
+function getTodayStartInShanghai(): string {
+  const now = new Date();
+  // Asia/Shanghai is UTC+8
+  const shanghaiOffset = 8 * 60; // minutes
+  const localOffset = now.getTimezoneOffset(); // minutes from UTC
+  const diffMinutes = shanghaiOffset + localOffset; // difference between local and Shanghai
+  const shanghaiNow = new Date(now.getTime() + diffMinutes * 60 * 1000);
+  shanghaiNow.setHours(0, 0, 0, 0);
+  return shanghaiNow.toISOString();
+}
+
 export async function checkAndSendProactiveMessages(): Promise<void> {
   const supabase = getSupabaseAdmin();
   let sent = 0, skipped = 0, capped = 0;
@@ -40,7 +58,7 @@ export async function checkAndSendProactiveMessages(): Promise<void> {
     const { user_id, character_id, affinity } = state;
     const thresholdMs = getThresholdMs(affinity);
 
-    const { data: lastMsg } = await supabase
+    const { data: lastMsg, error: lastMsgErr } = await supabase
       .from('messages')
       .select('created_at')
       .eq('user_id', user_id)
@@ -50,7 +68,7 @@ export async function checkAndSendProactiveMessages(): Promise<void> {
       .limit(1)
       .single();
 
-    if (!lastMsg) {
+    if (lastMsgErr || !lastMsg) {
       skipped++;
       continue;
     }
@@ -61,14 +79,13 @@ export async function checkAndSendProactiveMessages(): Promise<void> {
       continue;
     }
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const todayStart = getTodayStartInShanghai();
     const { count: sentToday, error: countErr } = await supabase
       .from('proactive_log')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user_id)
       .eq('character_id', character_id)
-      .gte('sent_at', todayStart.toISOString());
+      .gte('sent_at', todayStart);
 
     if (countErr) {
       console.error('[proactive] 计数失败:', countErr.message);
@@ -76,7 +93,7 @@ export async function checkAndSendProactiveMessages(): Promise<void> {
       continue;
     }
 
-    if ((sentToday || 0) >= 5) {
+    if ((sentToday || 0) >= MAX_DAILY_PROACTIVE) {
       capped++;
       continue;
     }
@@ -87,7 +104,7 @@ export async function checkAndSendProactiveMessages(): Promise<void> {
         skipped++;
         continue;
       }
-      const safeContent = content.slice(0, 300);
+      const safeContent = content.slice(0, MAX_CONTENT_LENGTH);
 
       const { error: insertErr } = await supabase.from('messages').insert({
         user_id,
@@ -105,7 +122,7 @@ export async function checkAndSendProactiveMessages(): Promise<void> {
       const { error: logErr } = await supabase.from('proactive_log').insert({
         user_id,
         character_id,
-        content_preview: safeContent.slice(0, 50),
+        content_preview: safeContent.slice(0, PREVIEW_LENGTH),
         affinity_at_send: affinity,
       });
 
@@ -114,8 +131,9 @@ export async function checkAndSendProactiveMessages(): Promise<void> {
       }
 
       sent++;
-    } catch (e: any) {
-      console.error('[proactive] LLM 失败:', e.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[proactive] LLM 失败:', msg);
       skipped++;
     }
   }
@@ -147,11 +165,11 @@ async function generateProactiveMessage(
     .eq('character_id', characterId)
     .is('group_id', null)
     .order('created_at', { ascending: false })
-    .limit(3);
+    .limit(MESSAGE_HISTORY_LIMIT);
 
   const recentMessages = (recent || [])
     .reverse()
-    .map((m: any) => `${m.role === 'user' ? '用户' : '你'}: ${m.content}`)
+    .map((m) => `${m.role === 'user' ? '用户' : '你'}: ${m.content}`)
     .join('\n');
 
   const stage = getStageLabel(affinity);
@@ -161,14 +179,16 @@ async function generateProactiveMessage(
 你们目前的关系阶段是「${stage}」（好感度 ${affinity}/100）。
 
 最近几条聊天记录：
+<recent_messages>
 ${recentMessages || '（还没有聊天记录）'}
+</recent_messages>
 
-现在你没有收到用户消息，但你想主动说点什么。写一句自然、口语化的话（不超过60字），不要开头说"我想跟你聊聊"这种太正式的话。可以直接是一句日常、一个观察、一个撒娇、一个分享。`;
+现在你没有收到用户消息，但你想主动说点什么。写一句自然、口语化的话（不超过${PROMPT_MAX_CHARS}字），不要开头说"我想跟你聊聊"这种太正式的话。可以直接是一句日常、一个观察、一个撒娇、一个分享。`;
 
   return generateChatResponse({
     systemPrompt: prompt,
     messages: [],
-    temperature: 0.9,
+    temperature: LLM_TEMPERATURE,
   });
 }
 
