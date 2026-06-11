@@ -31,14 +31,18 @@ function getStageLabel(affinity: number): string {
 }
 
 function getTodayStartInShanghai(): string {
-  const now = new Date();
-  // Asia/Shanghai is UTC+8
-  const shanghaiOffset = 8 * 60; // minutes
-  const localOffset = now.getTimezoneOffset(); // minutes from UTC
-  const diffMinutes = shanghaiOffset + localOffset; // difference between local and Shanghai
-  const shanghaiNow = new Date(now.getTime() + diffMinutes * 60 * 1000);
-  shanghaiNow.setHours(0, 0, 0, 0);
-  return shanghaiNow.toISOString();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const y = parts.find(p => p.type === 'year')!.value;
+  const m = parts.find(p => p.type === 'month')!.value;
+  const d = parts.find(p => p.type === 'day')!.value;
+
+  return `${y}-${m}-${d}T00:00:00+08:00`;
 }
 
 export async function checkAndSendProactiveMessages(): Promise<void> {
@@ -158,7 +162,7 @@ async function generateProactiveMessage(
     throw new Error('角色不存在');
   }
 
-  const { data: recent } = await supabase
+  const { data: recent, error: recentErr } = await supabase
     .from('messages')
     .select('role, content')
     .eq('user_id', userId)
@@ -166,6 +170,10 @@ async function generateProactiveMessage(
     .is('group_id', null)
     .order('created_at', { ascending: false })
     .limit(MESSAGE_HISTORY_LIMIT);
+
+  if (recentErr) {
+    console.error('[proactive] 拉最近消息失败:', recentErr.message);
+  }
 
   const recentMessages = (recent || [])
     .reverse()
