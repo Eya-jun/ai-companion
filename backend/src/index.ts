@@ -16,6 +16,7 @@ import authRouter from './routes/auth';
 import profileRouter from './routes/profile';
 import affinityRouter from './routes/affinity';
 import { startDailyAffinityCron } from './jobs/dailyAffinityEval';
+import { startProactiveGreetingCron } from './jobs/proactiveGreeting';
 
 const app = express();
 
@@ -100,6 +101,7 @@ async function start() {
     app.listen(config.port, () => {
       console.log(`\n🎉 服务器已启动: http://localhost:${config.port}`);
       startDailyAffinityCron();
+      startProactiveGreetingCron();
       console.log(`📝 API 文档:`);
       console.log(`   GET  /api/health`);
       console.log(`   GET  /api/characters`);
